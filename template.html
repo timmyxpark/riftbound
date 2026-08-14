@@ -1,0 +1,1620 @@
+<!-- Riftbound Pricing Update -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+<style>
+  :root {
+    --bg: #F7F8FC;
+    --card: #FFFFFF;
+    --ink: #3D4652;
+    --soft: #7A8697;
+    --faint: #A3ADBC;
+    --grid: #E7EAF2;
+    --grid2: #D6DBE8;
+
+    --mint: #5FA98C;
+    --mintbg: #E4F2EB;
+    --rose: #C97B72;
+    --rosebg: #FAE7E4;
+    --butter: #A8894A;
+    --butterbg: #F7EFDC;
+    --peri: #7C8CC4;
+    --peribg: #E9ECF8;
+
+    --mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+  }
+
+  * { box-sizing: border-box; }
+
+  .wrap {
+    font-family: "Inter", system-ui, -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    padding: 26px 18px 28px;
+    line-height: 1.4;
+    -webkit-font-smoothing: antialiased;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    /* Content is pinned to the top. justify-content:center used to vertically
+       centre everything, so filtering down to a few rows dragged the title and
+       tabs into the middle of the screen. */
+    justify-content: flex-start;
+    align-items: center;
+  }
+
+  .inner { width: 100%; max-width: 1080px; }
+
+  h1 { margin: 0; font-size: 20px; font-weight: 700; letter-spacing: -0.015em; text-align: center; }
+  .when { margin: 4px 0 16px; font-size: 13px; color: var(--soft); text-align: center; }
+
+  .panel {
+    background: var(--card);
+    border: 1px solid var(--grid2);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  .scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+  table { border-collapse: collapse; width: 100%; table-layout: auto; }
+
+  thead th {
+    text-align: center;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: var(--faint);
+    background: #FBFCFE;
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--grid2);
+    border-right: 1px solid var(--grid);
+    white-space: nowrap;
+  }
+  thead th:last-child { border-right: 0; }
+
+  tbody td {
+    padding: 9px 10px;
+    text-align: center;
+    vertical-align: middle;
+    border-bottom: 1px solid var(--grid);
+    border-right: 1px solid var(--grid);
+    vertical-align: middle;
+  }
+  tbody td:last-child { border-right: 0; }
+  tbody tr:last-child td { border-bottom: 0; }
+  tbody tr:nth-child(even) td { background: #FCFDFF; }
+
+
+  .set { font-size: 13.5px; font-weight: 600; white-space: nowrap; width: 1%; }
+  .set span { display: block; font-size: 10px; font-weight: 400; color: var(--faint); letter-spacing: 0.04em; }
+
+  .ask, .sales, .floorc { font-family: var(--mono); font-variant-numeric: tabular-nums; white-space: nowrap; width: 1%; }
+  .ask { font-size: 17px; font-weight: 700; letter-spacing: -0.01em; }
+  .sales { font-size: 13.5px; line-height: 1.55; color: var(--soft); }
+  .sales .top { font-weight: 600; color: var(--ink); }
+
+  .floorc b { display: block; font-size: 14px; font-weight: 600; }
+  .floorc b.hi { color: var(--rose); }
+  .floorc b.lo { color: var(--mint); }
+  .floorc span { display: block; font-size: 10px; color: var(--faint); font-family: "Inter", sans-serif; }
+
+  .tag {
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    padding: 3px 8px;
+    border-radius: 10px;
+    white-space: nowrap;
+  }
+  .tag.pos { color: var(--mint);   background: var(--mintbg);   }
+  .tag.neg { color: var(--rose);   background: var(--rosebg);   }
+  .tag.mid { color: var(--butter); background: var(--butterbg); }
+  .score { font-family: var(--mono); font-size: 10px; color: var(--faint); margin-left: 4px; }
+  td.sig { width: 1%; white-space: nowrap; }
+
+  .fac { margin-top: 5px; display: flex; gap: 2px; justify-content: center; }
+  .fac i {
+    font-style: normal;
+    font-size: 9px;
+    font-weight: 700;
+    font-family: var(--mono);
+    width: 22px;
+    text-align: center;
+    padding: 2px 0;
+    border-radius: 3px;
+    cursor: default;
+  }
+  .f2  { background: #D3EBE0; color: #3E8168; }
+  .f1  { background: var(--mintbg); color: var(--mint); }
+  .f0  { background: #EEF0F5; color: var(--soft); }
+  .fm1 { background: var(--rosebg); color: var(--rose); }
+  .fm2 { background: #F3D6D1; color: #A65A50; }
+
+  .trend { width: 100%; min-width: 190px; }
+  .trend svg { display: block; width: 100%; height: auto; }
+  .trend .cap { font-size: 9px; color: var(--faint); margin-top: 2px; text-align: center; }
+
+  /* key for the five-element weekly charts */
+  .ckey { display: none; gap: 14px; flex-wrap: wrap; align-items: center; margin-top: 7px; font-size: 11px; color: var(--soft); }
+  .ckey.on { display: flex; }
+  .ckey i { display: inline-flex; align-items: center; gap: 5px; font-style: normal; }
+  .ckey b { display: inline-block; width: 14px; height: 0; border-top-width: 2px; border-top-style: solid; }
+  .ckey .k-band { height: 8px; border: 1px solid #BFC7D6; background: rgba(214, 219, 232, 0.45); border-top: 0; }
+
+  tr.soon td { color: var(--faint); }
+  tr.soon .set { font-weight: 500; color: var(--faint); }
+
+  .notes { margin-top: 15px; font-size: 11.5px; color: var(--soft); max-width: 80ch; margin-left: auto; margin-right: auto; line-height: 1.55; }
+  .notes p { margin: 0 0 7px; }
+  .notes b { color: var(--ink); font-weight: 600; }
+  .notes code {
+    font-family: var(--mono); font-size: 10px;
+    background: var(--peribg); color: var(--peri);
+    padding: 1px 5px; border-radius: 3px;
+  }
+
+  .legend {
+    margin-top: 16px;
+    background: var(--card);
+    border: 1px solid var(--grid2);
+    border-radius: 8px;
+    padding: 13px 14px 12px;
+  }
+
+  .legend__title, .tl__title {
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    color: var(--ink);
+    text-decoration: underline;
+    text-underline-offset: 6px;
+    text-decoration-thickness: 1.5px;
+    text-decoration-color: var(--grid2);
+  }
+
+  .legend__title { margin-bottom: 15px; }
+
+  .legend__scale {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .legend__item {
+    flex: 1 1 150px;
+    min-width: 150px;
+    border-left: 3px solid var(--grid2);
+    padding: 2px 0 2px 9px;
+  }
+  .legend__item.pos { border-left-color: var(--mint); }
+  .legend__item.neg { border-left-color: var(--rose); }
+  .legend__item.mid { border-left-color: var(--butter); }
+
+  .legend__row { display: flex; align-items: center; gap: 7px; }
+  .legend__range {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--faint);
+    font-variant-numeric: tabular-nums;
+  }
+  .legend__desc { font-size: 11.5px; color: var(--soft); margin-top: 3px; line-height: 1.4; }
+
+  .legend__foot {
+    margin-top: 11px;
+    padding-top: 10px;
+    border-top: 1px solid var(--grid);
+    font-size: 11px;
+    color: var(--soft);
+    line-height: 1.5;
+  }
+  .legend__foot b { color: var(--ink); font-weight: 600; font-family: var(--mono); font-size: 10px; }
+
+  /* chart draw-in */
+  @keyframes rb-draw { from { stroke-dashoffset: 700; } to { stroke-dashoffset: 0; } }
+  @keyframes rb-rule { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes rb-pop  { from { opacity: 0; transform: scale(0.2); } to { opacity: 1; transform: scale(1); } }
+
+  .rb-line {
+    stroke-dasharray: 700;
+    stroke-dashoffset: 700;
+    animation: rb-draw 1.5s cubic-bezier(0.33, 0.9, 0.35, 1) forwards;
+  }
+  .rb-floor { opacity: 0; animation: rb-rule 0.7s ease-out forwards; }
+  .rb-band { opacity: 0; animation: rb-rule 0.9s ease-out forwards; }
+  .rb-edge {
+    stroke-dasharray: 700;
+    stroke-dashoffset: 700;
+    animation: rb-draw 1.5s cubic-bezier(0.33, 0.9, 0.35, 1) forwards;
+  }
+  .rb-pt {
+    opacity: 0;
+    animation: rb-rule 0.5s ease-out forwards;
+  }
+  .rb-dot {
+    opacity: 0;
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: rb-pop 0.45s cubic-bezier(0.3, 1.5, 0.5, 1) forwards;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .rb-line, .rb-edge { stroke-dashoffset: 0; animation: none; }
+    .rb-floor, .rb-dot, .rb-pt, .rb-band { opacity: 1; animation: none; transform: none; }
+  }
+
+
+  /* ---------- timeline ---------- */
+  .tl { margin-top: 16px; background: var(--card); border: 1px solid var(--grid2); border-radius: 8px; padding: 15px 15px 13px; }
+  .tl__head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; flex-wrap: wrap;
+              margin-bottom: 14px; }
+  .tl__key { display: flex; flex-wrap: wrap; gap: 4px; }
+  .tl__key i { font-style: normal; font-size: 9px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; padding: 2px 7px; border-radius: 9px; }
+
+  .k-set   { background: #E4EAFA; color: #55679F; }
+  .k-comp  { background: #FCE7DF; color: #B26A4C; }
+  .k-prod  { background: #E9F0E1; color: #628049; }
+  .k-promo { background: #F6E4F0; color: #A2649A; }
+  .k-rule  { background: #EDEEF2; color: #77808F; }
+
+  .tl__month { display: grid; grid-template-columns: 62px 1fr; gap: 10px; padding: 7px 0; border-top: 1px solid var(--grid); }
+  .tl__month:first-of-type { border-top: 0; }
+  .tl__m { font-family: var(--mono); font-size: 10.5px; font-weight: 600; color: var(--soft); padding-top: 3px; letter-spacing: 0.02em; }
+  .tl__m span { display: block; font-size: 9px; font-weight: 400; color: var(--faint); }
+  .tl__items { display: flex; flex-direction: column; gap: 4px; }
+
+  .tl__i { display: flex; align-items: baseline; gap: 7px; font-size: 11.5px; line-height: 1.35; text-align: left; }
+  .tl__i .dt { font-family: var(--mono); font-size: 10px; color: var(--faint); min-width: 44px; }
+  .tl__i .dot { width: 6px; height: 6px; border-radius: 50%; flex: 0 0 6px; margin-top: 4px; }
+  .tl__i.set .dot   { background: #8DA0D8; }
+  .tl__i.comp .dot  { background: #E0A98C; }
+  .tl__i.prod .dot  { background: #A6C089; }
+  .tl__i.promo .dot { background: #D3A0C6; }
+  .tl__i.rule .dot  { background: #B9BFC9; }
+  .tl__i b { font-weight: 600; color: var(--ink); }
+  .tl__i em { font-style: normal; color: var(--soft); }
+  .tl__i.past { opacity: 0.45; }
+
+  .tl__foot { margin-top: 10px; padding-top: 9px; border-top: 1px solid var(--grid); font-size: 10.5px; color: var(--faint); line-height: 1.5; }
+
+  .sig { margin-top: 16px; }
+  .sig__title {
+    font-size: 14px; font-weight: 700; letter-spacing: 0.09em; text-transform: uppercase;
+    color: var(--ink); text-decoration: underline; text-underline-offset: 6px;
+    text-decoration-thickness: 1.5px; text-decoration-color: var(--grid2);
+  }
+  .sig__sub { margin: 9px 0 11px; font-size: 11.5px; color: var(--soft); max-width: 74ch; }
+  .card { font-size: 13px; font-weight: 600; text-align: left; }
+  .card span { display: block; font-size: 10.5px; font-weight: 400; color: var(--faint); }
+  .n { text-align: center; font-family: var(--mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .n.big { font-size: 14.5px; font-weight: 600; }
+  .n.dim { color: var(--soft); font-size: 12.5px; }
+
+  tbody tr.setrow td {
+    background: linear-gradient(180deg, #DDE4F2 0%, #D2DBEC 100%);
+    font-size: 17px;
+    font-weight: 800;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: #33436B;
+    text-align: left;
+    padding: 13px 14px;
+    border-top: 2px solid #A9B7D6;
+    border-bottom: 1px solid #BAC6E0;
+  }
+  tbody tr.setrow:first-child td { border-top: 0; }
+  tbody tr.setrow td em {
+    font-style: normal;
+    font-size: 12px;
+    font-weight: 500;
+    color: #6B7A9E;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    margin-left: 10px;
+  }
+  /* keep the zebra striping from tinting the banner */
+  tbody tr.setrow:nth-child(even) td { background: linear-gradient(180deg, #DDE4F2 0%, #D2DBEC 100%); }
+
+  @media (max-width: 600px) {
+    tbody tr.setrow td { font-size: 15px; padding: 10px 10px; }
+    tbody tr.setrow td em { display: block; margin-left: 0; margin-top: 2px; }
+  }
+  .card.ind { padding-left: 18px; font-weight: 500; font-size: 12.5px; }
+  .card.ind .rar {
+    display: block; font-size: 10px; font-weight: 500; color: var(--faint);
+    letter-spacing: 0.05em; text-transform: uppercase; margin-top: 2px;
+  }
+  .n.over  { color: var(--sell); }
+  .n.under { color: var(--buy); }
+
+  .thumb { width: 88px; padding: 8px 4px 8px 10px; }
+  .thumb img {
+    display: block; width: 88px; height: auto; border-radius: 5px;
+    border: 1px solid var(--grid2); background: #EEF1F6;
+    box-shadow: 0 1px 3px rgba(23,33,47,0.10);
+  }
+  .dim { color: var(--faint); font-weight: 400; }
+
+  .tabs {
+    display: flex;
+    gap: 4px;
+    margin: 14px 0 16px;
+    padding: 4px;
+    background: #EFF2F8;
+    border: 1px solid var(--grid2);
+    border-radius: 9px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  .tab {
+    font-family: inherit;
+    font-size: 12.5px;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    color: var(--soft);
+    background: transparent;
+    border: 0;
+    border-radius: 6px;
+    padding: 8px 16px;
+    cursor: pointer;
+    transition: background 0.16s ease, color 0.16s ease;
+  }
+  .tab:hover { color: var(--ink); background: rgba(255,255,255,0.6); }
+  .tab.is-on {
+    background: var(--card);
+    color: #33436B;
+    box-shadow: 0 1px 3px rgba(23,33,47,0.12);
+  }
+  .tab:focus-visible { outline: 2px solid #7C8CC4; outline-offset: 2px; }
+
+  .setfilter {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    margin: 0 0 16px;
+  }
+  .setfilter__label {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    color: var(--faint);
+    margin-right: 4px;
+  }
+  .chip {
+    font-family: inherit;
+    font-size: 11.5px;
+    font-weight: 600;
+    color: var(--soft);
+    background: var(--card);
+    border: 1px solid var(--grid2);
+    border-radius: 20px;
+    padding: 5px 13px;
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+  }
+  .chip:hover { border-color: #A9B7D6; color: var(--ink); }
+  .chip.is-on {
+    background: #DDE4F2;
+    border-color: #A9B7D6;
+    color: #33436B;
+  }
+  .chip:focus-visible { outline: 2px solid #7C8CC4; outline-offset: 2px; }
+  .chip.is-empty { opacity: 0.4; }
+
+  .rtag {
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 3px 9px;
+    border-radius: 10px;
+    white-space: nowrap;
+    background: #EEF0F5;
+    color: var(--soft);
+  }
+  .rtag.r-epic     { background: #EDE4F5; color: #6C4E96; }
+  .rtag.r-rare     { background: #E1EAF8; color: #3F5E9C; }
+  .rtag.r-uncommon { background: #E4F1E9; color: #3F7C5C; }
+  .rtag.r-common   { background: #EFF1F4; color: #6E7D7A; }
+  .rtag.r-promo    { background: #FBEDDC; color: #8A6A33; }
+
+  .namebox { position: relative; display: inline-flex; align-items: center; }
+  .namebox input {
+    font-family: "Inter", system-ui, sans-serif;
+    font-size: 12.5px;
+    color: var(--ink);
+    background: var(--card);
+    border: 1px solid var(--grid2);
+    border-radius: 999px;
+    padding: 5px 26px 5px 11px;
+    width: 210px;
+    outline: none;
+    -webkit-appearance: none;
+    appearance: none;
+  }
+  .namebox input::-webkit-search-cancel-button { -webkit-appearance: none; }
+  .namebox input:focus { border-color: var(--peri); box-shadow: 0 0 0 3px var(--peribg); }
+  .namebox input::placeholder { color: var(--faint); }
+  .namebox__clear {
+    position: absolute; right: 6px; top: 50%; transform: translateY(-50%);
+    border: 0; background: none; cursor: pointer; padding: 0 4px;
+    font-size: 15px; line-height: 1; color: var(--faint);
+  }
+  .namebox__clear:hover { color: var(--ink); }
+
+  .pricefilter {
+    display: flex; flex-wrap: wrap; align-items: center; justify-content: center;
+    gap: 10px; margin: 0 0 16px;
+  }
+  .range { position: relative; width: 260px; height: 22px; }
+  .range__track {
+    position: absolute; top: 9px; left: 0; right: 0; height: 4px;
+    background: var(--grid2); border-radius: 2px;
+  }
+  .range__fill { position: absolute; top: 0; bottom: 0; background: #7C8CC4; border-radius: 2px; }
+  .range input[type=range] {
+    position: absolute; top: 0; left: 0; width: 100%; height: 22px;
+    -webkit-appearance: none; appearance: none; background: none; pointer-events: none; margin: 0;
+  }
+  .range input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none; pointer-events: auto;
+    width: 15px; height: 15px; border-radius: 50%;
+    background: var(--card); border: 2px solid #7C8CC4; cursor: grab;
+    box-shadow: 0 1px 3px rgba(23,33,47,0.2);
+  }
+  .range input[type=range]::-moz-range-thumb {
+    pointer-events: auto; width: 15px; height: 15px; border-radius: 50%;
+    background: var(--card); border: 2px solid #7C8CC4; cursor: grab;
+  }
+  .range__out {
+    font-family: var(--mono); font-size: 12px; color: var(--ink);
+    font-variant-numeric: tabular-nums; min-width: 96px; text-align: center;
+  }
+  .chip--reset { padding: 4px 10px; font-size: 11px; }
+
+  .catnote { margin-top: 10px; font-size: 11.5px; color: var(--faint); text-align: center; }
+  .cat__price { text-align: right; font-family: var(--mono); font-variant-numeric: tabular-nums; font-size: 14px; font-weight: 600; white-space: nowrap; }
+  .cat__name { text-align: left; font-size: 13px; font-weight: 500; }
+
+  .emptynote {
+    font-size: 12.5px;
+    color: var(--faint);
+    text-align: center;
+    padding: 22px 0;
+  }
+
+  .tabpanel { display: none; }
+  .tabpanel.is-on { display: block; }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .tabpanel.is-on { animation: rb-panel 0.28s ease-out; }
+    @keyframes rb-panel { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+  }
+
+  @media (max-width: 520px) {
+    .tabs { gap: 2px; padding: 3px; }
+    .tab { font-size: 11.5px; padding: 7px 10px; }
+  }
+
+  .hint { display: none; font-size: 11px; color: var(--faint); margin-bottom: 7px; }
+  @media (max-width: 820px) {
+    .wrap { padding: 20px 13px 22px; }
+    .hint { display: block; }
+    thead th, tbody td { padding: 8px 7px; }
+  }
+</style>
+
+<div class="wrap">
+ <div class="inner">
+  <h1>Riftbound Pricing Update</h1>
+  <div class="when" id="when"></div>
+  <nav class="tabs" id="tabs" role="tablist">
+    <button class="tab is-on" role="tab" aria-selected="true" data-panel="p-cases">Sealed Cases</button>
+    <button class="tab" role="tab" aria-selected="false" data-panel="p-sig">Signature Overnumbers</button>
+    <button class="tab" role="tab" aria-selected="false" data-panel="p-over">Overnumbered</button>
+    <button class="tab" role="tab" aria-selected="false" data-panel="p-cat">Playables</button>
+    <button class="tab" role="tab" aria-selected="false" data-panel="p-cal">Calendar</button>
+  </nav>
+
+  <div class="setfilter" id="setfilter">
+    <span class="setfilter__label">Sets</span>
+    <button class="chip chip--s is-on" data-set="all">All</button>
+    <button class="chip chip--s" data-set="Origins">Origins</button>
+    <button class="chip chip--s" data-set="Spiritforged">Spiritforged</button>
+    <button class="chip chip--s" data-set="Unleashed">Unleashed</button>
+    <button class="chip chip--s" data-set="Vendetta">Vendetta</button>
+    <button class="chip chip--s" data-set="Radiance">Radiance</button>
+  </div>
+
+  <div class="setfilter" id="rarityfilter" style="display:none">
+    <span class="setfilter__label">Rarity</span>
+    <button class="chip chip--r is-on" data-rarity="all">All</button>
+    <button class="chip chip--r" data-rarity="Epic">Epic</button>
+    <button class="chip chip--r" data-rarity="Rare">Rare</button>
+    <button class="chip chip--r" data-rarity="Uncommon">Uncommon</button>
+    <button class="chip chip--r" data-rarity="Common">Common</button>
+    <button class="chip chip--r" data-rarity="Promo">Promo</button>
+  </div>
+
+  <div class="setfilter" id="namefilter" style="display:none">
+    <span class="setfilter__label">Name</span>
+    <div class="namebox">
+      <input type="search" id="nameInput" placeholder="Filter by card name" aria-label="Filter by card name" autocomplete="off" spellcheck="false">
+      <button class="namebox__clear" id="nameClear" aria-label="Clear name filter" title="Clear" style="display:none">&times;</button>
+    </div>
+  </div>
+
+  <div class="pricefilter" id="pricefilter" style="display:none">
+    <span class="setfilter__label">Price</span>
+    <div class="range">
+      <div class="range__track"><div class="range__fill" id="rangeFill"></div></div>
+      <input type="range" id="rangeMin" min="0" max="100" value="0" step="1" aria-label="Minimum price">
+      <input type="range" id="rangeMax" min="0" max="100" value="100" step="1" aria-label="Maximum price">
+    </div>
+    <span class="range__out" id="rangeOut">any</span>
+    <button class="chip chip--reset" id="rangeReset">Reset</button>
+  </div>
+
+
+  <div class="hint">Swipe the table sideways to see all columns</div>
+
+
+  <section id="p-cases" class="tabpanel is-on">
+  <div class="panel">
+    <div class="scroll">
+      <table>
+        <thead>
+          <tr>
+            <th>Set</th>
+            <th>Ask now</th>
+            <th>Last 5 sales</th>
+            <th>Floor</th>
+            <th>Signal</th>
+            <th>Market Price vs. High/Low Range</th>
+          </tr>
+        </thead>
+        <tbody id="body"></tbody>
+      </table>
+    </div>
+  </div>
+  <div class="ckey"></div>
+
+  <div class="legend">
+    <div class="legend__title">What the signals mean</div>
+    <div class="legend__scale" id="legend"></div>
+    <div class="legend__foot">
+      Score is the weighted blend of the four factor chips, each running -2 to +2:
+      <b>VAL</b> value against the floor (40%), <b>MOM</b> momentum (25%),
+      <b>RPT</b> reprint risk (20%), <b>EVT</b> event demand (15%).
+    </div>
+  </div>
+
+
+  <div class="notes" id="notes"></div>
+  </section>
+
+  <section id="p-sig" class="tabpanel">
+  <div class="sig">
+    <div class="sig__title">Signature Overnumbers</div>
+    <div class="sig__sub">The signed artist editions - roughly one in ten Overnumbered cards is signed, about one per 360 packs. Every signature in every set, ranked by market price. A cheapest listing far under market is worth a second look before it is worth a bid.</div>
+    <div class="ckey"></div>
+    <div class="panel">
+      <div class="scroll">
+        <table>
+          <thead>
+            <tr>
+              <th></th>
+              <th>Card</th>
+              <th>Ask now</th>
+              <th>Last 5 sales</th>
+              <th>Market Price vs. High/Low Range</th>
+            </tr>
+          </thead>
+          <tbody id="sigbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  </section>
+
+  <section id="p-over" class="tabpanel">
+  <div class="sig">
+    <div class="sig__title">Overnumbered</div>
+    <div class="sig__sub">The unsigned Overnumbered treatments - same card numbers as their signed counterparts, without the asterisk. Includes Baron Nashor (Ultimate) at 238/219. Near Mint, English, raw only.</div>
+    <div class="ckey"></div>
+    <div class="panel">
+      <div class="scroll">
+        <table>
+          <thead>
+            <tr>
+              <th></th>
+              <th>Card</th>
+              <th>Ask now</th>
+              <th>Last 5 sales</th>
+              <th>Market Price vs. High/Low Range</th>
+            </tr>
+          </thead>
+          <tbody id="overbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  </section>
+
+
+  <section id="p-cat" class="tabpanel">
+    <div class="sig">
+      <div class="sig__title">Playables</div>
+      <div class="sig__sub">Every card in the set, down to three cents. Ask is the cheapest Near Mint English copy listed, shipping included; cards with nothing listed show as none. Charts plot weekly sold prices over the past year.</div>
+      <div class="ckey"></div>
+      <div class="panel">
+        <div class="scroll">
+          <table>
+            <thead>
+              <tr><th></th><th>Card</th><th>Rarity</th><th>Ask now</th><th>Last 5 sales</th><th>Market Price vs. High/Low Range</th></tr>
+            </thead>
+            <tbody id="catbody"></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="catnote" id="catnote"></div>
+    </div>
+  </section>
+
+  <section id="p-cal" class="tabpanel">
+  <div class="tl">
+    <div class="tl__head">
+      <div class="tl__title">Riftbound calendar</div>
+      <div class="tl__key">
+        <i class="k-set">set release</i>
+        <i class="k-comp">competitive</i>
+        <i class="k-prod">product</i>
+        <i class="k-promo">promo / drawing</i>
+        <i class="k-rule">rules</i>
+      </div>
+    </div>
+    <div id="timeline"></div>
+    <div class="tl__foot">From Riot's August 2026 roadmap and the 2027 set line-up, both published Aug 3-5, 2026. Dates are local to each event and Riot updates them as details firm up.</div>
+  </div>
+  </section>
+
+
+ </div>
+</div>
+
+<script>
+var money = function (n) { return "$" + n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }); };
+var whole = function (n) {
+  if (n == null) return "-";
+  return n < 100
+    ? "$" + n.toFixed(2)
+    : "$" + Math.round(n).toLocaleString("en-US");
+};
+
+var SEED = __SNAPSHOT__;
+
+function valueScore(m) {
+  if (m <= 1.15) return 2;
+  if (m <= 1.25) return 1;
+  if (m <= 1.40) return 0;
+  if (m <= 1.60) return -1;
+  return -2;
+}
+
+function momentumScore(s) {
+  var v = 0;
+  /* price against its own 8-week average, so one week rolling out of the
+     window cannot swing the score on its own */
+  if (s.trendPct >= 3) v += 1; else if (s.trendPct <= -3) v -= 1;
+  if (s.rangePct <= 30) v += 1; else if (s.rangePct >= 80) v -= 1;
+  if (s.volNow > s.volPrev * 1.5) v += 1; else if (s.volNow < s.volPrev * 0.7) v -= 1;
+  return Math.max(-2, Math.min(2, v));
+}
+
+var W = { value: 0.40, momentum: 0.25, reprint: 0.20, event: 0.15 };
+
+/* One source of truth for the signal scale - the table and the legend both read this. */
+var BANDS = [
+  { min:  1.00, label: "buy",        tone: "pos", range: "+1.00 and up",
+    desc: "Cheap against its own floor with nothing major working against it." },
+  { min:  0.30, label: "light buy",  tone: "pos", range: "+0.30 to +1.00",
+    desc: "Leaning favorable. Worth a partial position rather than backing up the truck." },
+  { min: -0.30, label: "hold",       tone: "mid", range: "-0.30 to +0.30",
+    desc: "Fairly priced, or the factors cancel out. No edge either way." },
+  { min: -1.00, label: "light sell", tone: "neg", range: "-1.00 to -0.30",
+    desc: "Leaning unfavorable. A reasonable spot to move some inventory, not all of it." },
+  { min: -Infinity, label: "sell",   tone: "neg", range: "below -1.00",
+    desc: "Expensive against its floor with the other factors pointing down too." }
+];
+
+/* Not a score band - shown in the legend so the tag is explained. */
+var WATCH = { label: "watch", tone: "mid", range: "no score",
+  desc: "Under 12 weeks of price history, so there is no floor to judge against yet." };
+
+function band(total) {
+  for (var i = 0; i < BANDS.length; i++) {
+    if (total >= BANDS[i].min) return BANDS[i];
+  }
+  return BANDS[BANDS.length - 1];
+}
+
+var THIN_WEEKS = 12;   // below this the floor is flagged as thin, but still used
+
+function composite(s) {
+  /* Only sets with no price history at all go unscored. A short history still
+     produces a real floor - it is just drawn from fewer weeks. */
+  if (!s.floor) {
+    return { f: null, total: null, label: "watch", tone: "mid", mult: null,
+             why: "No price history yet" };
+  }
+  var mult = s.ask / s.floor;
+  var f = { value: valueScore(mult), momentum: momentumScore(s), reprint: s.reprint, event: s.event };
+  var total = f.value * W.value + f.momentum * W.momentum + f.reprint * W.reprint + f.event * W.event;
+  var b = band(total);
+  return { f: f, total: total, label: b.label, tone: b.tone, mult: mult };
+}
+
+/* catalog series ship as 10 points normalised 0-99 plus the real low and high,
+   which keeps 288 charts small enough to embed. c.lo and c.hi are the extremes
+   across all three series, so one pair rescales every one of them. */
+function unpack(q, lo, hi) {
+  if (!q || lo == null || hi == null) return null;
+  var out = [], span = hi - lo;
+  for (var i = 0; i < q.length; i += 2) {
+    out.push(+(lo + (parseInt(q.substr(i, 2), 10) / 99) * span).toFixed(2));
+  }
+  return out;
+}
+
+function midpoints(lows, highs) {
+  return lows.map(function (v, i) { return +((v + highs[i]) / 2).toFixed(2); });
+}
+
+function catChart(c, idx) {
+  /* full five-element chart once ql/qh/qm are present */
+  var lows = unpack(c.ql, c.lo, c.hi),
+      highs = unpack(c.qh, c.lo, c.hi),
+      mkt = unpack(c.qm, c.lo, c.hi);
+  if (lows && highs && mkt &&
+      lows.length === highs.length && highs.length === mkt.length && lows.length > 1) {
+    var mid = midpoints(lows, highs);
+    /* Cards that started trading after the set launched carry their own first
+       and last week; without them a January debut gets drawn from October and
+       the month axis lies. Older snapshots have no f/l, so fall back. */
+    var first = c.f || "2025-10-06", last = c.l || "2026-08-10";
+    return chart(mid, weeksFromSpan(first, last, mid.length), null,
+                 Math.max.apply(null, highs), idx, 6, true,
+                 { lo: lows, hi: highs, mkt: mkt });
+  }
+
+  /* older single-series snapshot */
+  if (!c.q) return '<span class="dim">no sales</span>';
+  var pts = unpack(c.q, c.lo, c.hi);
+  var weeks = weeksFromSpan("2025-10-06", "2026-08-10", pts.length);
+  return chart(pts, weeks, null, Math.max.apply(null, pts), idx, 6, true);
+}
+
+function renderCatalog(groups, sets, rarities, minPrice, maxPrice) {
+  var body = document.getElementById("catbody");
+  if (!body) return;
+  var html = "", shown = 0, total = 0, n = 0;
+
+  (groups || []).forEach(function (g) {
+    if (!g.cards) return;
+    if (sets && sets.indexOf(g.set) < 0) return;
+    var cards = g.cards.filter(function (c) {
+      total++;
+      if (!matchesName(c.n)) return false;
+      if (rarities && rarities.indexOf(c.r) < 0) return false;
+      var v = (c.a == null) ? null : c.a;
+      if (v == null) return !minPrice;          /* unlisted cards only show at "any" */
+      return v >= (minPrice || 0) && v <= (maxPrice == null ? Infinity : maxPrice);
+    });
+    if (!cards.length) return;
+    shown += cards.length;
+    html += '<tr class="setrow"><td colspan="6">' + g.set +
+            ' <em>' + cards.length + ' cards</em></td></tr>';
+    cards.forEach(function (c) {
+      html += '<tr>' +
+        '<td class="thumb"><img loading="lazy" alt="" onerror=\'this.style.display="none"\' src="https://tcgplayer-cdn.tcgplayer.com/product/' + c.id + '_200w.jpg"></td>' +
+        '<td class="cat__name">' + c.n + '</td>' +
+        '<td><span class="rtag r-' + c.r.toLowerCase() + '">' + c.r + '</span></td>' +
+        '<td class="cat__price">' + (c.a == null ? '<span class="dim">none</span>' : money(c.a)) + '</td>' +
+        '<td class="sales">' + ((c.c && c.c.length)
+            ? c.c.map(function (v, i) { return '<div class="' + (i === 0 ? "top" : "") + '">' + money(v) + '</div>'; }).join("")
+            : '<div class="dim">none</div>') + '</td>' +
+        '<td class="trend">' + catChart(c, n++) + '</td>' +
+      '</tr>';
+    });
+  });
+
+  body.innerHTML = html || '<tr><td colspan="6" class="emptynote">No cards match these filters.</td></tr>';
+  var note = document.getElementById("catnote");
+  if (note) note.textContent = shown + " of " + total + " cards shown";
+}
+
+/* Signature and Overnumbered cards ship full-precision weekly series rather than
+   the packed catalog form: c.s alone on older snapshots, c.sl/c.sh/c.sm once the
+   low, high and market history has been pulled. */
+function cardChart(c, idx, mode) {
+  /* sl/sh/sm arrive either as plain arrays or, for a bulk pull, as packed
+     two-digit strings rescaled by c.lo and c.hi - packing is what makes 434
+     products affordable to transfer. */
+  var sl = typeof c.sl === "string" ? unpack(c.sl, c.lo, c.hi) : c.sl,
+      sh = typeof c.sh === "string" ? unpack(c.sh, c.lo, c.hi) : c.sh,
+      sm = typeof c.sm === "string" ? unpack(c.sm, c.lo, c.hi) : c.sm;
+  if (sl && sh && sm &&
+      sl.length === sh.length && sh.length === sm.length && sl.length > 1) {
+    var mid = midpoints(sl, sh);
+    if (mode === "mid") {
+      /* Signatures drop the shaded range: just market against the midpoint.
+         The low and high still set nothing here, so scale to what is drawn. */
+      return chart(mid, weeksFromSpan(c.f, c.l, mid.length), null,
+                   Math.max.apply(null, mid.concat(sm)), idx, 6, true,
+                   { lo: sl, hi: sh, mkt: sm, midOnly: true });
+    }
+    return chart(mid, weeksFromSpan(c.f, c.l, mid.length), null,
+                 Math.max.apply(null, sh), idx, 6, true,
+                 { lo: sl, hi: sh, mkt: sm });
+  }
+  if (c.s && c.s.length > 1) {
+    return chart(c.s, weeksFromSpan(c.f, c.l, c.s.length), null,
+                 Math.max.apply(null, c.s), idx, 6, true);
+  }
+  return '<span class="dim">too few weeks</span>';
+}
+
+function renderCards(groups, targetId, label, sets, rarities, showRarity, chartMode) {
+  var cols = showRarity ? 6 : 5;
+  var body = document.getElementById(targetId);
+  if (!body) return;
+  var html = "", idx = 0;
+
+  var picked = (groups || []).filter(function (g) { return !sets || sets.indexOf(g.set) > -1; });
+
+  /* name narrowing, before every other step, so the merged-table and
+     "not released" branches below all see the same reduced set */
+  if (activeName) {
+    picked = picked.map(function (g) {
+      if (!g.cards) return g;
+      return { set: g.set, none: g.none,
+               cards: g.cards.filter(function (c) { return matchesName(c.n); }) };
+    }).filter(function (g) { return g.cards && g.cards.length; });
+  }
+
+  /* rarity narrowing, used by the Playables table */
+  if (rarities && rarities.length) {
+    picked = picked.map(function (g) {
+      if (!g.cards) return g;
+      return { set: g.set, none: g.none,
+               cards: g.cards.filter(function (c) { return rarities.indexOf(c.r) > -1; }) };
+    }).filter(function (g) { return g.none || (g.cards && g.cards.length); });
+  }
+
+  /* A specific multi-set choice reads better as one combined table than as
+     several stacked ones, so merge and title it with the chosen sets. */
+  if (sets && sets.length < 5 && picked.length > 1) {
+    var merged = [];
+    picked.forEach(function (g) { if (g.cards) merged = merged.concat(g.cards); });
+    merged.sort(function (a, b) {
+      var av = (a.c && a.c[0]) || a.a || 0, bv = (b.c && b.c[0]) || b.a || 0;
+      return bv - av;
+    });
+    var absent = picked.filter(function (g) { return g.none; })
+                       .map(function (g) { return g.set; });
+    picked = [{ set: picked.map(function (g) { return g.set; }).join(", "),
+                cards: merged, footnote: absent.length ? absent.join(", ") + " not released" : null }];
+  }
+
+  picked.forEach(function (g) {
+    if (g.none) {
+      html += '<tr class="soon"><td class="card">' + g.set + '</td>' +
+              '<td colspan="' + (cols - 1) + '">' + g.none + '</td></tr>';
+      return;
+    }
+    html += '<tr class="setrow"><td colspan="' + cols + '">' + g.set +
+            ' <em>' + g.cards.length + ' ' + (label || "cards") + '</em></td></tr>';
+
+    if (g.footnote) {
+      html += '<tr class="soon"><td class="card ind" colspan="' + cols + '">' + g.footnote + '</td></tr>';
+    }
+
+    g.cards.forEach(function (c) {
+      var sales = (c.c && c.c.length)
+        ? c.c.map(function (v, i) {
+            return '<div class="' + (i === 0 ? "top" : "") + '">' + whole(v) + '</div>';
+          }).join("")
+        : '<div class="dim">none</div>';
+
+      html += '<tr>' +
+        '<td class="thumb"><img loading="lazy" alt="" onerror=\'this.style.display="none"\' ' +
+          'src="https://tcgplayer-cdn.tcgplayer.com/product/' + c.id + '_200w.jpg"></td>' +
+        '<td class="card ind">' + c.n + (!showRarity && c.r ? '<span class="rar">' + c.r + '</span>' : '') + '</td>' +
+        (showRarity ? '<td><span class="rtag r-' + String(c.r || "").toLowerCase() + '">' + (c.r || "-") + '</span></td>' : '') +
+        '<td class="ask">' + (c.a ? money(c.a) : '<span class="dim">none listed</span>') + '</td>' +
+        '<td class="sales">' + sales + '</td>' +
+        '<td class="trend">' + cardChart(c, idx++, chartMode) + '</td>' +
+      '</tr>';
+    });
+  });
+
+  body.innerHTML = html || '<tr><td colspan="' + cols + '" class="emptynote">' +
+    (activeName ? 'No cards match that name.' : 'No cards for the selected sets.') + '</td></tr>';
+}
+
+/* singles report only the first and last week of their series, so space the
+   points evenly across that span for the month axis */
+function weeksFromSpan(first, last, n) {
+  if (!first || !last || n < 2) return [];
+  var a = new Date(first + "T00:00:00Z").getTime();
+  var b = new Date(last + "T00:00:00Z").getTime();
+  var out = [];
+  for (var i = 0; i < n; i++) {
+    out.push(new Date(a + ((b - a) * i) / (n - 1)).toISOString().slice(0, 10));
+  }
+  return out;
+}
+
+function renderLegend() {
+  document.getElementById("legend").innerHTML = BANDS.map(function (b) {
+    return '<div class="legend__item ' + b.tone + '">' +
+      '<div class="legend__row"><span class="tag ' + b.tone + '">' + b.label + '</span>' +
+      '<span class="legend__range">' + b.range + '</span></div>' +
+      '<div class="legend__desc">' + b.desc + '</div></div>';
+  }).join("");
+}
+
+/* ---------------- Riftbound calendar ----------------
+   From Riot's August 2026 Roadmap and the 2027 set line-up.
+   kind: set | comp | prod | promo | rule                */
+var CALENDAR = [
+  { m: "2026-08", label: "Aug", year: "2026", items: [
+    { d: "7-9",    kind: "comp",  t: "Showdown Series: Ottawa", n: "Gatineau, Canada" },
+    { d: "14-17",  kind: "promo", t: "T1 Signature Set drawing", n: "registration window" },
+    { d: "15-16",  kind: "comp",  t: "Showdown Series x3", n: "Auckland, Speyer, Los Angeles" },
+    { d: "17",     kind: "comp",  t: "Vendetta Summoner Skirmish 1", n: "window opens" },
+    { d: "21-23",  kind: "comp",  t: "RQ Barcelona", n: "Secret Garden on sale" },
+    { d: "22-23",  kind: "comp",  t: "Showdown Series: Milwaukee", n: "" }
+  ]},
+  { m: "2026-09", label: "Sep", year: "", items: [
+    { d: "4-6",    kind: "comp",  t: "RQ Singapore", n: "Secret Garden on sale" },
+    { d: "4-7",    kind: "comp",  t: "PAX West", n: "Secret Garden on sale" },
+    { d: "11-13",  kind: "comp",  t: "Showdown Series x2", n: "Baltimore, Lucca" },
+    { d: "14",     kind: "comp",  t: "Vendetta Summoner Skirmish 2", n: "window opens" },
+    { d: "19-20",  kind: "comp",  t: "Showdown Series: Houston", n: "" },
+    { d: "25-27",  kind: "comp",  t: "RQ Los Angeles", n: "final RQ of 2026" },
+    { d: "25-27",  kind: "set",   t: "Radiance previews begin", n: "run through Oct 9" }
+  ]},
+  { m: "2026-10", label: "Oct", year: "", items: [
+    { d: "1-4",    kind: "comp",  t: "Frontline Las Vegas Open", n: "" },
+    { d: "3-4",    kind: "comp",  t: "Showdown Series: Murcia", n: "" },
+    { d: "8",      kind: "rule",  t: "Radiance rules update", n: "" },
+    { d: "mid",    kind: "comp",  t: "China Vendetta Major", n: "" },
+    { d: "9-11",   kind: "comp",  t: "EVO France / PAX AUS", n: "" },
+    { d: "16-22",  kind: "set",   t: "Radiance Pre-Rift", n: "final Pre-Rift of 2026" },
+    { d: "22-25",  kind: "comp",  t: "Spiel Essen / Paris Games Week", n: "Le Rift Tour finals" },
+    { d: "23",     kind: "set",   t: "Radiance launch", n: "set 5, EN + CN + FR, 180 cards" },
+    { d: "23",     kind: "set",   t: "French Vendetta launch", n: "global parity" },
+    { d: "23",     kind: "prod",  t: "Radiance products", n: "displays, Vault Bundle, Showdown Decks" },
+    { d: "TBD",    kind: "promo", t: "T1 Worlds Player Bundle drawing", n: "" },
+    { d: "28-1",   kind: "comp",  t: "Lucca Comics / CoolStuffCon Orlando", n: "" }
+  ]},
+  { m: "2026-11", label: "Nov", year: "", items: [
+    { d: "6-8",    kind: "comp",  t: "European Regional Championship", n: "Stuttgart, $50k, Radiance legal" },
+    { d: "27-29",  kind: "comp",  t: "Dreamhack Stockholm", n: "" },
+    { d: "28-29",  kind: "comp",  t: "Toulouse Game Show", n: "" }
+  ]},
+  { m: "2026-12", label: "Dec", year: "", items: [
+    { d: "4",      kind: "prod",  t: "Gift of the Rift Bundle", n: "16 packs across all 5 sets, alt-art Akali" },
+    { d: "4-6",    kind: "comp",  t: "PAX Unplugged", n: "" },
+    { d: "11-13",  kind: "comp",  t: "NA Regional Championship", n: "Convergence Fest, Las Vegas" },
+    { d: "13-15",  kind: "set",   t: "Legacy previews begin", n: "at Convergence Fest" }
+  ]},
+  { m: "2027-01", label: "Jan", year: "2027", items: [
+    { d: "22-28",  kind: "set",   t: "Legacy Pre-Rift", n: "" },
+    { d: "29",     kind: "set",   t: "Legacy launch", n: "set 6, 346 cards, draft-focused" },
+    { d: "29",     kind: "prod",  t: "Legacy products", n: "4 Champion Decks, Vault Bundle" },
+    { d: "29",     kind: "rule",  t: "Pack contents change", n: "6 commons, new Legend/Battlefield slot" }
+  ]},
+  { m: "2027-02", label: "Feb", year: "", items: [
+    { d: "TBD",    kind: "rule",  t: "State of the Game", n: "first of 2027" },
+    { d: "19",     kind: "prod",  t: "Proving Grounds 2nd Edition", n: "4 decks, $40, EN/CN/FR/KR" }
+  ]},
+  { m: "2027-04", label: "Apr", year: "", items: [
+    { d: "23-29",  kind: "set",   t: "The Reckoning Pre-Rift", n: "" },
+    { d: "30",     kind: "set",   t: "The Reckoning launch", n: "set 7, 264 cards" }
+  ]},
+  { m: "2027-Q3", label: "Q3", year: "", items: [
+    { d: "",       kind: "set",   t: "Set 8", n: "unnamed, Bandle City theme" }
+  ]},
+  { m: "2027-Q4", label: "Q4", year: "", items: [
+    { d: "",       kind: "set",   t: "Set 9", n: "unnamed, Shadow Isles teased" }
+  ]}
+];
+
+function renderTimeline(todayISO) {
+  var today = todayISO.slice(0, 7);
+  document.getElementById("timeline").innerHTML = CALENDAR.map(function (mo) {
+    var items = mo.items.map(function (it) {
+      var past = mo.m < today;
+      return '<div class="tl__i ' + it.kind + (past ? " past" : "") + '">' +
+        '<span class="dot"></span>' +
+        '<span class="dt">' + (it.d || "&nbsp;") + '</span>' +
+        '<span><b>' + it.t + '</b>' + (it.n ? ' <em>' + it.n + '</em>' : '') + '</span></div>';
+    }).join("");
+    return '<div class="tl__month"><div class="tl__m">' + mo.label +
+           (mo.year ? '<span>' + mo.year + '</span>' : '') + '</div>' +
+           '<div class="tl__items">' + items + '</div></div>';
+  }).join("");
+}
+
+function chipClass(v) {
+  return v >= 2 ? "f2" : v === 1 ? "f1" : v === 0 ? "f0" : v === -1 ? "fm1" : "fm2";
+}
+
+/* Compact chart: $500 price axis, month ticks along the bottom. */
+var MON = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+
+/* Exactly `count` ticks on a rounded scale that still covers the data. */
+function niceTicks(min, max, maxCount) {
+  /* `maxCount` is a ceiling, not a target. The old version fixed the count and
+     forced the step up until it fit, which on a 3.49-22.98 card picked 0-40 and
+     spent half the plot on empty space. Now the smallest nice step that fits
+     within the ceiling wins, so the series fills the frame. */
+  var mults = [1, 2, 2.5, 5, 10];
+  var span = (max - min) || Math.abs(max) || 1;
+  var base = Math.pow(10, Math.floor(Math.log10(span))) / 100;
+  var lo = 0, hi = 1, step = 1;
+  for (var p = 0; p < 60; p++) {
+    step = base * Math.pow(10, Math.floor(p / mults.length)) * mults[p % mults.length];
+    if (!(step > 0) || !isFinite(step)) continue;
+    lo = Math.floor(min / step) * step;
+    hi = Math.ceil(max / step) * step;
+    if (hi === lo) hi = lo + step;
+    if (Math.round((hi - lo) / step) + 1 <= maxCount) break;
+  }
+  var out = [], n = Math.round((hi - lo) / step);
+  for (var i = 0; i <= n; i++) {
+    /* rebuild from the step to keep 0.1 + 0.2 style drift out of the labels */
+    out.push(+(lo + step * i).toPrecision(12));
+  }
+  return out;
+}
+
+
+/* `band`, when present, carries the three extra series that make up the full
+   five-element chart: {lo:[], hi:[], mkt:[]}, each the same length as `series`.
+   `series` is then the midpoint of lo and hi. Without `band` the chart falls
+   back to the single blue line, so a card whose history has not been pulled
+   yet still renders instead of blanking the row. */
+function chart(series, weeks, floor, ask, idx, tickCount, small, band) {
+  var hasFloor = floor != null;
+  var hasBand = !!(band && band.lo && band.hi && band.mkt &&
+                   band.lo.length === series.length &&
+                   band.hi.length === series.length &&
+                   band.mkt.length === series.length);
+  var w = small ? 240 : 320, h = small ? 92 : 118;
+  var padL = small ? 36 : 44, padR = small ? 8 : 10;
+  var padT = small ? 8 : 10, padB = small ? 22 : 28;
+  var midOnly = hasBand && !!band.midOnly;
+
+  /* The latest market price is printed to the right of the green end dot.
+     Reserve the room in padR before x() is defined, or the text runs off the
+     viewBox and gets clipped by the svg edge. */
+  var endFont = small ? 8.5 : 9.5;
+  /* Rounded to the nearest whole dollar, except under $1 where that would print
+     "0" - 214 of the 297 Origins cards sit below a dollar, so integer rounding
+     alone would blank three quarters of the Playables column. */
+  var endLabel = null;
+  if (hasBand) {
+    var endVal = band.mkt[band.mkt.length - 1];
+    endLabel = endVal >= 1
+      ? Math.round(endVal).toLocaleString("en-US")
+      : endVal.toFixed(2);
+  }
+  if (endLabel) padR += 4 + endLabel.length * endFont * 0.62;   // mono advance
+
+  var vals = series.concat(hasFloor ? [floor, ask] : [ask]);
+  /* midOnly hides the low and high, so letting them set the scale would squash
+     the two lines that are actually drawn */
+  if (hasBand) vals = midOnly ? vals.concat(band.mkt) : vals.concat(band.lo, band.hi, band.mkt);
+  /* One axis rule for every section. The sealed cases used to sit on fixed
+     500-dollar steps, which gave Vendetta a 500-1000 axis and two gridlines for
+     data spanning 700-985. */
+  var ticks = niceTicks(Math.min.apply(null, vals), Math.max.apply(null, vals),
+                        tickCount || 6);
+  var lo = ticks[0];
+  var hi = ticks[ticks.length - 1];
+
+  var x = function (i) { return padL + (i / Math.max(series.length - 1, 1)) * (w - padL - padR); };
+  var y = function (v) { return padT + (1 - (v - lo) / (hi - lo)) * (h - padT - padB); };
+  var axisY = h - padB;
+
+  /* price gridlines */
+  var grid = "", labels = "";
+  ticks.forEach(function (t) {
+    var ty = y(t).toFixed(1);
+    grid += '<line x1="' + padL + '" y1="' + ty + '" x2="' + (w - padR) + '" y2="' + ty +
+            '" stroke="#E7EAF2" stroke-width="1"></line>';
+    labels += '<text x="' + (padL - 5) + '" y="' + (+ty + 3).toFixed(1) +
+              '" text-anchor="end" font-size="' + (small ? 8 : 8.5) + '" fill="#A3ADBC" ' +
+              'font-family="IBM Plex Mono, monospace">' +
+              (t >= 1000 ? +(t / 1000).toFixed(2) + "k" : Math.round(t)) + '</text>';
+  });
+
+  /* month ticks: first week of each new month, thinned so labels never collide */
+  var marks = [];
+  var seenMonth = "";
+  for (var i = 0; i < weeks.length; i++) {
+    var ym = weeks[i].slice(0, 7);
+    if (ym !== seenMonth) { seenMonth = ym; marks.push({ i: i, m: +weeks[i].slice(5, 7) - 1 }); }
+  }
+  var everyN = Math.ceil(marks.length / 8);   // wider chart fits ~8 labels
+  var months = "";
+  marks.forEach(function (mk, n) {
+    var mx = x(mk.i).toFixed(1);
+    months += '<line x1="' + mx + '" y1="' + axisY + '" x2="' + mx + '" y2="' + (axisY + 3) +
+              '" stroke="#D6DBE8" stroke-width="1"></line>';
+    if (n % everyN === 0) {
+      months += '<text x="' + mx + '" y="' + (axisY + (small ? 11 : 13)) + '" text-anchor="middle" font-size="' + (small ? 8 : 8.5) + '" ' +
+                'fill="#A3ADBC" font-family="IBM Plex Mono, monospace">' + MON[mk.m] + '</text>';
+    }
+  });
+
+  var poly = function (arr) {
+    return arr.map(function (v, i) { return x(i).toFixed(1) + "," + y(v).toFixed(1); }).join(" ");
+  };
+
+  var pts = poly(series);
+  var line = "#3F5E9C";     // medium dark blue, the single-series fallback
+  var green = "#2F7F55";    // market price, only ever drawn as part of a band
+  var fy = hasFloor ? y(floor).toFixed(1) : null;
+
+  var base = 0.15 + idx * 0.22;
+  var d = function (extra) { return ' style="animation-delay:' + (base + extra).toFixed(2) + 's"'; };
+
+  /* Drawn back to front: shaded weekly range, then its two grey edges, then
+     market in blue, then the midpoint in black on top. */
+  var bandLayer = "";
+  if (hasBand && !midOnly) {
+    var area = poly(band.hi) + " " +
+               band.lo.map(function (v, i) {
+                 var j = band.lo.length - 1 - i;
+                 return x(j).toFixed(1) + "," + y(band.lo[j]).toFixed(1);
+               }).join(" ");
+    bandLayer =
+      '<polygon class="rb-band"' + d(0) + ' points="' + area + '" fill="#D6DBE8" fill-opacity="0.45"></polygon>' +
+      '<polyline class="rb-edge"' + d(0.05) + ' points="' + poly(band.lo) + '" fill="none" stroke="#BFC7D6" stroke-width="0.9" stroke-linejoin="round" stroke-linecap="round"></polyline>' +
+      '<polyline class="rb-edge"' + d(0.05) + ' points="' + poly(band.hi) + '" fill="none" stroke="#BFC7D6" stroke-width="0.9" stroke-linejoin="round" stroke-linecap="round"></polyline>';
+  }
+  var marketLayer = hasBand
+    ? '<polyline class="rb-line"' + d(0.1) + ' points="' + poly(band.mkt) + '" fill="none" stroke="' + green + '" stroke-width="1.2" stroke-linejoin="round" stroke-linecap="round"></polyline>'
+    : "";
+
+  /* Blue is reserved for the single-series fallback, which is NOT market price -
+     it is the midpoint on cases and the weekly low in the catalog. Market only
+     exists as part of a band, and is the only green line on the board.
+
+     On a banded chart `series` is the midpoint. It is no longer drawn - the two
+     grey edges already show the range it sits in - but it is still passed in, so
+     it keeps setting the y-scale and stays available if it is ever wanted back. */
+  var mainStroke = hasBand ? green : line;
+  var dotAt = hasBand ? band.mkt : series;
+
+  return '<svg viewBox="0 0 ' + w + ' ' + h + '" role="img" ' +
+    'aria-label="' + (hasBand
+        ? (midOnly ? 'weekly market and the midpoint of low and high, by month over the past year'
+                 : 'weekly low, high and market by month over the past year')
+        : 'weekly market price by month over the past year') + '">' +
+    grid +
+    '<line x1="' + padL + '" y1="' + padT + '" x2="' + padL + '" y2="' + axisY + '" stroke="#D6DBE8" stroke-width="1"></line>' +
+    '<line x1="' + padL + '" y1="' + axisY + '" x2="' + (w - padR) + '" y2="' + axisY + '" stroke="#D6DBE8" stroke-width="1"></line>' +
+    (hasFloor ? '<line class="rb-floor"' + d(0.9) + ' x1="' + padL + '" y1="' + fy + '" x2="' + (w - padR) + '" y2="' + fy + '" stroke="#9AA8D8" stroke-width="1" stroke-dasharray="3 3"></line>' : '') +
+    bandLayer +
+    marketLayer +
+    /* the midpoint line: blue, and only where the band is hidden */
+    (midOnly
+      ? '<polyline class="rb-line"' + d(0.05) + ' points="' + pts + '" fill="none" stroke="' + line + '" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round"></polyline>'
+      : (hasBand ? "" :
+        '<polyline class="rb-line"' + d(0) + ' points="' + pts + '" fill="none" stroke="' + mainStroke + '" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round"></polyline>')) +
+    /* per-week dots, on the single-series fallback only; four series sharing
+       one frame reads as clutter with them */
+    (hasBand ? "" : series.map(function (v, i) {
+      if (i === series.length - 1) return "";
+      return '<circle class="rb-pt"' + d(0.5 + (i / series.length) * 0.7) +
+             ' cx="' + x(i).toFixed(1) + '" cy="' + y(v).toFixed(1) + '" r="1.3" fill="' + mainStroke + '"></circle>';
+    }).join("")) +
+    '<circle class="rb-dot"' + d(1.25) + ' cx="' + x(dotAt.length - 1).toFixed(1) + '" cy="' + y(dotAt[dotAt.length - 1]).toFixed(1) + '" r="2.1" fill="' + mainStroke + '"></circle>' +
+    /* midOnly draws two lines, so the midpoint gets its own end dot in blue to
+       match market's; drawn second so it sits on top where the two converge */
+    (midOnly
+      ? '<circle class="rb-dot"' + d(1.3) + ' cx="' + x(series.length - 1).toFixed(1) + '" cy="' + y(series[series.length - 1]).toFixed(1) + '" r="2.1" fill="' + line + '"></circle>'
+      : "") +
+    (endLabel
+      ? '<text class="rb-dot"' + d(1.35) + ' x="' + (x(band.mkt.length - 1) + 4.5).toFixed(1) +
+        '" y="' + (y(band.mkt[band.mkt.length - 1]) + endFont * 0.36).toFixed(1) +
+        '" font-size="' + endFont + '" fill="' + green +
+        '" font-family="IBM Plex Mono, monospace" font-weight="600">' + endLabel + '</text>'
+      : "") +
+    labels + months +
+    '</svg>' + (hasFloor ? '<div class="cap">dashed line = floor</div>' : '');
+}
+
+function render(snap, sets) {
+  var body = document.getElementById("body");
+  body.innerHTML = "";
+
+  snap.sets.filter(function (s) { return !sets || sets.indexOf(s.set) > -1; }).forEach(function (s, idx) {
+    var tr = document.createElement("tr");
+
+    if (s.soon) {
+      tr.className = "soon";
+      tr.innerHTML = '<td class="set">' + s.set + '<span>' + s.code + '</span></td>' +
+        '<td class="ask">-</td><td class="sales">-</td><td class="floorc">-</td>' +
+        '<td>' + s.soon + '</td><td class="trend">-</td>';
+      body.appendChild(tr);
+      return;
+    }
+
+    var c = composite(s);
+    var multCls = !c.mult ? "" : c.mult >= 1.45 ? "hi" : c.mult <= 1.15 ? "lo" : "";
+
+    var sales = s.clears.map(function (v, i) {
+      return '<div class="' + (i === 0 ? "top" : "") + '">' + whole(v) + '</div>';
+    }).join("");
+
+    /* floor cell: the anchor, plus the 26-week floor when it has drifted away
+       from it, which is how you spot the market re-basing upward */
+    var rebased = s.floorRecent && s.floor && (s.floorRecent / s.floor) >= 1.15;
+    var thin = (s.weekCount || 0) < THIN_WEEKS;
+    var floorNote = whole(s.floor) +
+      (rebased ? ' &middot; 26wk ' + whole(s.floorRecent) : '') +
+      (thin ? ' &middot; ' + s.weekCount + 'wk only' : '');
+    var floorCell = c.mult
+      ? '<b class="' + multCls + '">' + c.mult.toFixed(2) + 'x</b><span>' + floorNote + '</span>'
+      : '<b>-</b><span>not set</span>';
+
+    var chips = !c.f ? "" :
+      '<i class="' + chipClass(c.f.value) + '" title="Value vs floor: ' + c.mult.toFixed(2) + 'x">VAL</i>' +
+      '<i class="' + chipClass(c.f.momentum) + '" title="Momentum: ' + (s.trendPct >= 0 ? '+' : '') + s.trendPct + '% vs its 8-week average, ' +
+        s.rangePct + '% of 52-week range, volume ' + s.volNow + ' vs ' + s.volPrev + ' the prior 4 weeks">MOM</i>' +
+      '<i class="' + chipClass(c.f.reprint) + '" title="Reprint risk: ' + s.reprintWhy + '">RPT</i>' +
+      '<i class="' + chipClass(c.f.event) + '" title="Event demand: ' + s.eventWhy + '">EVT</i>';
+
+    tr.innerHTML =
+      '<td class="set">' + s.set + '<span>' + s.code + '</span></td>' +
+      '<td class="ask">' + money(s.ask) + '</td>' +
+      '<td class="sales">' + sales + '</td>' +
+      '<td class="floorc">' + floorCell + '</td>' +
+      '<td class="sig"><span class="tag ' + c.tone + '">' + c.label + '</span>' +
+        (c.total === null ? '' : '<span class="score">' + (c.total >= 0 ? "+" : "") + c.total.toFixed(2) + '</span>') +
+        (chips ? '<div class="fac">' + chips + '</div>' : '<span class="why">' + c.why + '</span>') + '</td>' +
+      '<td class="trend">' + chart(s.series, s.weeks, s.floor, s.ask, idx, null, false,
+          (s.low && s.high && s.market &&
+           s.low.length === s.series.length && s.high.length === s.series.length &&
+           s.market.length === s.series.length)
+            ? { lo: s.low, hi: s.high, mkt: s.market } : null) + '</td>';
+    body.appendChild(tr);
+  });
+
+  document.getElementById("when").textContent = "Prices updated as of " + (snap.pulledLabel || snap.pulled);
+
+  document.getElementById("notes").innerHTML =
+    '<p><b>Sold prices</b> plot the midpoint of the cheapest and dearest actual sale in each week, not ' +
+    'TCGplayer market price, which is a lagging average and can sit far below where cards are really ' +
+    'trading. Weeks with no sales are skipped.</p>' +
+    '<p><b>Last 5 sales</b> is everything TCGplayer publishes - the feed caps at five per product, so ten ' +
+    'is not available. Newest first, rounded to the dollar.</p>' +
+    '<p><b>The floor</b> is the second-lowest weekly low ever recorded for that case, kept from run to run ' +
+    'so it never expires when a week ages out of TCGplayer\'s rolling year. If the last 26 weeks have ' +
+    'bottomed well above it, the row shows that recent floor too - a sign the market has re-based upward ' +
+    'and the old anchor may be too low to be useful. A set with only a few weeks behind it still gets scored against the floor it has, ' +
+    'with the week count shown next to it.</p>' +
+    '<p><b>Signal</b> blends four factors, each scored -2 to +2, weighted value 40%, momentum 25%, reprint ' +
+    'risk 20%, event demand 15%. Hover a chip for its reasoning. <code>VAL</code> price against the floor, ' +
+    'the second-lowest weekly low of the past year. <code>MOM</code> price vs its 8-week average, position in the 52-week ' +
+    'range, and whether weekly volume is rising or drying up. <code>RPT</code> reprint exposure. ' +
+    '<code>EVT</code> competitive-calendar demand.</p>' +
+    '<p><b>Behind RPT and EVT:</b> in the August 3 State of the Game Riot committed to reprinting booster ' +
+    'sets for as long as they stay Standard legal, and Origins reprints have rolled out since spring with ' +
+    'more promised. Against that, Radiance lands Oct 23, Stuttgart runs Nov 6-8, Las Vegas Dec 11-13, and ' +
+    'Vendetta qualifiers opened in Barcelona on Aug 10.</p>' +
+    '<p>Reprint and event scores are hand-entered from Riot announcements and will go stale unless updated; ' +
+    'prices refresh whenever the board is rebuilt. This reads one marketplace and knows nothing about what ' +
+    'you paid or how long you can hold. Not financial advice.</p>';
+}
+
+var ALL_SETS = ["Origins", "Spiritforged", "Unleashed", "Vendetta", "Radiance"];
+var activeSets = ALL_SETS.slice();
+var ALL_RARITIES = ["Epic", "Rare", "Uncommon", "Common", "Promo"];
+var activeRarities = ALL_RARITIES.slice();
+
+/* assigned by the two filter setups so switching tabs can clear both */
+var activeMinPrice = 0, activeMaxPrice = null, PRICE_CEIL = 0;
+var activeName = "";
+var repaintSetChips = null, repaintRarityChips = null, repaintPriceChips = null, repaintName = null;
+
+/* Match on a folded form so "kaisa" finds "Kai'Sa" and "leblanc" finds
+   "LeBlanc" - apostrophes and accents in card names would otherwise make the
+   filter feel broken. */
+function foldName(s) {
+  s = String(s == null ? "" : s).toLowerCase();
+  if (s.normalize) s = s.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  return s.replace(/[^a-z0-9]+/g, "");
+}
+
+function matchesName(name) {
+  if (!activeName) return true;
+  return foldName(name).indexOf(activeName) > -1;
+}
+
+function resetFilters() {
+  activeSets = ALL_SETS.slice();
+  activeRarities = ALL_RARITIES.slice();
+  activeMinPrice = 0;
+  activeMaxPrice = null;
+  activeName = "";
+  if (repaintName) repaintName();
+  if (repaintSetChips) repaintSetChips();
+  if (repaintRarityChips) repaintRarityChips();
+  if (repaintPriceChips) repaintPriceChips();
+  drawAll();
+}
+
+function restartCharts(scope) {
+  /* charts animate on first paint; a panel that was hidden never painted, and
+     re-rendered rows start over, so kick the animations explicitly */
+  var root = scope || document;
+  if (!root || !root.querySelectorAll) return;
+  root.querySelectorAll(".rb-line,.rb-edge,.rb-band,.rb-pt,.rb-dot,.rb-floor").forEach(function (el) {
+    var a = el.style.animation;
+    el.style.animation = "none";
+    void el.offsetWidth;
+    el.style.animation = a || "";
+  });
+}
+
+/* The key is only truthful where the four series are actually plotted, so it is
+   switched on per tab by looking at what that tab's cards carry. */
+function keyHTML(mode) {
+  if (mode === "mid") {
+    return '<i><b style="border-color:#2F7F55"></b>market</i>' +
+           '<i><b style="border-color:#3F5E9C"></b>Midpoint of High&amp;Low Solds</i>';
+  }
+  return '<i><b class="k-band"></b>weekly low to high</i>' +
+         '<i><b style="border-color:#2F7F55"></b>market</i>';
+}
+
+function paintKeys() {
+  var keys = document.querySelectorAll(".ckey");
+  if (!keys.length) return;
+  var banded = [
+    (SEED.sets || []).some(function (s) { return !!(s.low && s.high && s.market); }),
+    hasBands(SEED.signatures, "s"),
+    hasBands(SEED.overnumbered, "s"),
+    hasBands(SEED.catalog, "q")
+  ];
+  var modes = [null, "mid", null, null];   /* signatures is the second key */
+  for (var i = 0; i < keys.length; i++) {
+    if (banded[i]) { keys[i].innerHTML = keyHTML(modes[i]); keys[i].className = "ckey on"; }
+    else { keys[i].innerHTML = ""; keys[i].className = "ckey"; }
+  }
+}
+
+function hasBands(groups, kind) {
+  return (groups || []).some(function (g) {
+    return (g.cards || []).some(function (c) {
+      return kind === "q" ? !!(c.ql && c.qh && c.qm) : !!(c.sl && c.sh && c.sm);
+    });
+  });
+}
+
+function drawAll() {
+  render(SEED, activeSets);
+  renderCards(SEED.signatures, "sigbody", "signatures", activeSets, null, false, "mid");
+  renderCards(SEED.overnumbered, "overbody", "overnumbered", activeSets);
+  renderCatalog(SEED.catalog, activeSets, activeRarities, activeMinPrice, activeMaxPrice);
+  paintKeys();
+  restartCharts(document.querySelector ? document.querySelector(".tabpanel.is-on") : null);
+}
+
+(function setupNameFilter(){
+  var box = document.getElementById("nameInput");
+  var clear = document.getElementById("nameClear");
+  if (!box) return;
+
+  function apply() {
+    activeName = foldName(box.value);
+    if (clear) clear.style.display = box.value ? "" : "none";
+    drawAll();
+  }
+
+  /* typing repaints hundreds of inline SVGs, so coalesce keystrokes rather
+     than redrawing the table on every one */
+  var timer = null;
+  box.addEventListener("input", function () {
+    if (timer) clearTimeout(timer);
+    timer = setTimeout(apply, 120);
+  });
+  box.addEventListener("keydown", function (e) {
+    if (e.key === "Escape") { box.value = ""; if (timer) clearTimeout(timer); apply(); }
+  });
+  if (clear) clear.addEventListener("click", function () {
+    box.value = ""; box.focus(); if (timer) clearTimeout(timer); apply();
+  });
+
+  /* resetFilters() clears the term when tabs change; keep the box in step */
+  repaintName = function () {
+    box.value = "";
+    if (clear) clear.style.display = "none";
+  };
+})();
+
+(function setupTabs(){
+  var tabs = [].slice.call(document.querySelectorAll(".tab"));
+  tabs.forEach(function (t) {
+    t.addEventListener("click", function () {
+      tabs.forEach(function (o) {
+        var on = o === t;
+        o.classList.toggle("is-on", on);
+        o.setAttribute("aria-selected", on ? "true" : "false");
+      });
+      document.querySelectorAll(".tabpanel").forEach(function (p) {
+        p.classList.toggle("is-on", p.id === t.dataset.panel);
+      });
+      var panelId = t.dataset.panel;
+      var setF = document.getElementById("setfilter");
+      if (setF) setF.style.display = (panelId === "p-cal") ? "none" : "";
+      var rarF = document.getElementById("rarityfilter");
+      if (rarF) rarF.style.display = (panelId === "p-cat") ? "" : "none";
+      var priF = document.getElementById("pricefilter");
+      if (priF) priF.style.display = (panelId === "p-cat") ? "" : "none";
+      var namF = document.getElementById("namefilter");
+      if (namF) namF.style.display =
+        (panelId === "p-sig" || panelId === "p-over" || panelId === "p-cat") ? "" : "none";
+      var hint = document.querySelector ? document.querySelector(".hint") : null;
+      if (hint) hint.style.display = (panelId === "p-cal") ? "none" : "";
+      /* every section starts unfiltered */
+      resetFilters();
+      restartCharts(document.getElementById(t.dataset.panel));
+    });
+  });
+})();
+
+(function setupSetFilter(){
+  /* .chip alone also matches the rarity chips - clicking one would fire this
+     handler with an undefined set name and wipe the set selection */
+  var chips = [].slice.call(document.querySelectorAll(".chip--s"));
+  var allChip = chips.filter(function (c) { return c.dataset.set === "all"; })[0];
+  var setChips = chips.filter(function (c) { return c.dataset.set !== "all"; });
+  if (!allChip) return;
+
+  function repaint() {
+    var everything = activeSets.length === ALL_SETS.length;
+    allChip.classList.toggle("is-on", everything);
+    setChips.forEach(function (c) {
+      c.classList.toggle("is-on", !everything && activeSets.indexOf(c.dataset.set) > -1);
+    });
+  }
+  repaintSetChips = repaint;
+
+  function paint() { repaint(); drawAll(); }
+
+  allChip.addEventListener("click", function () {
+    activeSets = ALL_SETS.slice();
+    paint();
+  });
+
+  setChips.forEach(function (c) {
+    c.addEventListener("click", function () {
+      var name = c.dataset.set;
+      /* first pick after "All" starts a fresh selection rather than
+         subtracting one set from everything */
+      if (activeSets.length === ALL_SETS.length) {
+        activeSets = [name];
+      } else {
+        var i = activeSets.indexOf(name);
+        if (i > -1) activeSets.splice(i, 1); else activeSets.push(name);
+        if (!activeSets.length) activeSets = ALL_SETS.slice();
+      }
+      paint();
+    });
+  });
+})();
+
+(function initFilterVisibility(){
+  var rarF = document.getElementById("rarityfilter");
+  if (rarF) rarF.style.display = "none";   /* Sealed Cases opens first */
+  var priF = document.getElementById("pricefilter");
+  if (priF) priF.style.display = "none";
+})();
+
+(function setupPriceFilter(){
+  var lo = document.getElementById("rangeMin"),
+      hi = document.getElementById("rangeMax"),
+      fill = document.getElementById("rangeFill"),
+      out = document.getElementById("rangeOut"),
+      reset = document.getElementById("rangeReset");
+  if (!lo || !hi) return;
+
+  /* the slider moves in even steps but prices are lopsided - most cards sit
+     under a dollar while a few reach eighty - so map the handle position
+     through a square curve, which spreads the cheap end out */
+  var ceil = 0;
+  (SEED.catalog || []).forEach(function (g) {
+    (g.cards || []).forEach(function (c) { if (c.a != null && c.a > ceil) ceil = c.a; });
+  });
+  PRICE_CEIL = Math.ceil(ceil);
+  var toPrice = function (pct) { return +(Math.pow(pct / 100, 2) * PRICE_CEIL).toFixed(2); };
+
+  function repaint() {
+    var a = Math.min(+lo.value, +hi.value), b = Math.max(+lo.value, +hi.value);
+    fill.style.left = a + "%";
+    fill.style.width = (b - a) + "%";
+    activeMinPrice = toPrice(a);
+    activeMaxPrice = b >= 100 ? null : toPrice(b);
+    out.textContent = (a <= 0 && b >= 100)
+      ? "any"
+      : money(activeMinPrice) + " - " + (activeMaxPrice == null ? money(PRICE_CEIL) : money(activeMaxPrice));
+  }
+  repaintPriceChips = function () { lo.value = 0; hi.value = 100; repaint(); };
+
+  function onInput() { repaint(); drawAll(); }
+  lo.addEventListener("input", onInput);
+  hi.addEventListener("input", onInput);
+  if (reset) reset.addEventListener("click", function () { lo.value = 0; hi.value = 100; onInput(); });
+  repaint();
+})();
+
+(function setupRarityFilter(){
+  var chips = [].slice.call(document.querySelectorAll(".chip--r"));
+  if (!chips.length) return;
+  var allChip = chips.filter(function (c) { return c.dataset.rarity === "all"; })[0];
+  var rarChips = chips.filter(function (c) { return c.dataset.rarity !== "all"; });
+  if (!allChip) return;
+
+  function repaint() {
+    var everything = activeRarities.length === ALL_RARITIES.length;
+    allChip.classList.toggle("is-on", everything);
+    rarChips.forEach(function (c) {
+      c.classList.toggle("is-on", !everything && activeRarities.indexOf(c.dataset.rarity) > -1);
+    });
+  }
+  repaintRarityChips = repaint;
+
+  function paint() { repaint(); drawAll(); }
+
+  allChip.addEventListener("click", function () {
+    activeRarities = ALL_RARITIES.slice();
+    paint();
+  });
+
+  rarChips.forEach(function (c) {
+    c.addEventListener("click", function () {
+      var name = c.dataset.rarity;
+      if (activeRarities.length === ALL_RARITIES.length) {
+        activeRarities = [name];
+      } else {
+        var i = activeRarities.indexOf(name);
+        if (i > -1) activeRarities.splice(i, 1); else activeRarities.push(name);
+        if (!activeRarities.length) activeRarities = ALL_RARITIES.slice();
+      }
+      paint();
+    });
+  });
+})();
+
+drawAll();
+renderLegend();
+renderTimeline(SEED.pulled);
+</script>
