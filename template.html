@@ -484,6 +484,60 @@
   .cat__price { text-align: right; font-family: var(--mono); font-variant-numeric: tabular-nums; font-size: 14px; font-weight: 600; white-space: nowrap; }
   .cat__name { text-align: left; font-size: 13px; font-weight: 500; }
 
+  /* ---------- deck pricer ---------- */
+  .deck__add { display: flex; flex-wrap: wrap; align-items: center; justify-content: center;
+               gap: 8px; margin: 0 0 14px; }
+  .deck__box { position: relative; width: 330px; max-width: 100%; }
+  .deck__box input {
+    font-family: "Inter", system-ui, sans-serif;
+    font-size: 13px; color: var(--ink); background: var(--card);
+    border: 1px solid var(--grid2); border-radius: 999px;
+    padding: 7px 14px; width: 100%; outline: none;
+    -webkit-appearance: none; appearance: none;
+  }
+  .deck__box input::-webkit-search-cancel-button { -webkit-appearance: none; }
+  .deck__box input:focus { border-color: var(--peri); box-shadow: 0 0 0 3px var(--peribg); }
+  .deck__box input::placeholder { color: var(--faint); }
+
+  .deck__suggest {
+    display: none; position: absolute; z-index: 20; left: 0; right: 0; top: calc(100% + 4px);
+    background: var(--card); border: 1px solid var(--grid2); border-radius: 8px;
+    box-shadow: 0 6px 18px rgba(23, 33, 47, 0.13);
+    max-height: 270px; overflow-y: auto; text-align: left;
+  }
+  .deck__suggest.on { display: block; }
+  .deck__opt {
+    display: flex; align-items: baseline; gap: 8px;
+    padding: 7px 11px; cursor: pointer; border-bottom: 1px solid var(--grid);
+  }
+  .deck__opt:last-child { border-bottom: 0; }
+  .deck__opt:hover, .deck__opt.is-active { background: var(--peribg); }
+  .deck__opt b { font-weight: 600; font-size: 12.5px; color: var(--ink); }
+  .deck__opt span { font-size: 9.5px; color: var(--faint); letter-spacing: 0.04em;
+                    text-transform: uppercase; white-space: nowrap; }
+  .deck__opt em { margin-left: auto; font-style: normal; font-family: var(--mono);
+                  font-size: 11.5px; color: var(--soft); font-variant-numeric: tabular-nums; }
+  .deck__none { padding: 11px; font-size: 12px; color: var(--faint); }
+
+  .deck__qty {
+    width: 48px; font-family: var(--mono); font-size: 12.5px; text-align: center;
+    color: var(--ink); background: var(--card); font-variant-numeric: tabular-nums;
+    border: 1px solid var(--grid2); border-radius: 5px; padding: 3px 2px;
+  }
+  .deck__qty:focus { outline: none; border-color: var(--peri); box-shadow: 0 0 0 2px var(--peribg); }
+  .deck__x { border: 0; background: none; cursor: pointer; color: var(--faint);
+             font-size: 15px; line-height: 1; padding: 0 5px; }
+  .deck__x:hover { color: var(--rose); }
+  .deck__x:focus-visible { outline: 2px solid #7C8CC4; outline-offset: 2px; }
+
+  #deckfoot td { border-top: 2px solid var(--grid2); background: #FBFCFE; padding: 11px 10px; }
+  .deck__lbl { text-align: right; font-size: 10px; font-weight: 600; letter-spacing: 0.07em;
+               text-transform: uppercase; color: var(--faint); }
+  /* Sold totals take the same green the market line uses everywhere else. */
+  .deck__tot { font-family: var(--mono); font-size: 15px; font-weight: 700;
+               font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .deck__tot.sold { color: #2F7F55; }
+
   .emptynote {
     font-size: 12.5px;
     color: var(--faint);
@@ -521,6 +575,7 @@
     <button class="tab" role="tab" aria-selected="false" data-panel="p-sig">Signature Overnumbers</button>
     <button class="tab" role="tab" aria-selected="false" data-panel="p-over">Overnumbered</button>
     <button class="tab" role="tab" aria-selected="false" data-panel="p-cat">Playables</button>
+    <button class="tab" role="tab" aria-selected="false" data-panel="p-deck">Deck Pricer</button>
     <button class="tab" role="tab" aria-selected="false" data-panel="p-cal">Calendar</button>
   </nav>
 
@@ -668,6 +723,39 @@
         </div>
       </div>
       <div class="catnote" id="catnote"></div>
+    </div>
+  </section>
+
+  <section id="p-deck" class="tabpanel">
+    <div class="sig">
+      <div class="sig__title">Deck Pricer</div>
+      <div class="sig__sub">Build a list and price it two ways at once. <b>Ask</b> is the cheapest Near Mint English copy listed, shipping included - what you would have to undercut to sell. <b>Sold</b> is the average of that card's last five real sales - closer to what it actually moves for. The two totals are kept separate because they answer different questions.</div>
+
+      <div class="deck__add">
+        <div class="deck__box">
+          <input type="search" id="deckInput" placeholder="Start typing a card name"
+                 aria-label="Add a card by name" autocomplete="off" spellcheck="false"
+                 role="combobox" aria-expanded="false" aria-controls="deckSuggest" aria-autocomplete="list">
+          <div class="deck__suggest" id="deckSuggest" role="listbox" aria-label="Matching cards"></div>
+        </div>
+        <button class="chip chip--reset" id="deckClear">Clear list</button>
+      </div>
+
+      <div class="panel">
+        <div class="scroll">
+          <table>
+            <thead>
+              <tr>
+                <th>Qty</th><th>Card</th><th>Ask each</th><th>Avg last 5</th>
+                <th>Ask total</th><th>Sold total</th><th></th>
+              </tr>
+            </thead>
+            <tbody id="deckbody"></tbody>
+            <tfoot id="deckfoot"></tfoot>
+          </table>
+        </div>
+      </div>
+      <div class="catnote" id="decknote"></div>
     </div>
   </section>
 
@@ -1476,7 +1564,9 @@ function drawAll() {
       });
       var panelId = t.dataset.panel;
       var setF = document.getElementById("setfilter");
-      if (setF) setF.style.display = (panelId === "p-cal") ? "none" : "";
+      /* The deck list is built by name across every set, so the set chips would
+         do nothing there - same reasoning as the calendar. */
+      if (setF) setF.style.display = (panelId === "p-cal" || panelId === "p-deck") ? "none" : "";
       var rarF = document.getElementById("rarityfilter");
       if (rarF) rarF.style.display = (panelId === "p-cat") ? "" : "none";
       var priF = document.getElementById("pricefilter");
@@ -1485,7 +1575,7 @@ function drawAll() {
       if (namF) namF.style.display =
         (panelId === "p-sig" || panelId === "p-over" || panelId === "p-cat") ? "" : "none";
       var hint = document.querySelector ? document.querySelector(".hint") : null;
-      if (hint) hint.style.display = (panelId === "p-cal") ? "none" : "";
+      if (hint) hint.style.display = (panelId === "p-cal" || panelId === "p-deck") ? "none" : "";
       /* every section starts unfiltered */
       resetFilters();
       restartCharts(document.getElementById(t.dataset.panel));
@@ -1614,6 +1704,224 @@ function drawAll() {
       paint();
     });
   });
+})();
+
+/* ---------------- deck pricer ----------------
+   Prices a pile two ways at once. Ask is the cheapest Near Mint English copy
+   listed - what you have to undercut to sell. Sold is the mean of that card's
+   last five real sales - what it has actually been moving for. The totals stay
+   separate because mixing them would answer neither question. */
+
+function avgSolds(c) {
+  if (!c || !c.length) return null;
+  var s = 0;
+  for (var i = 0; i < c.length; i++) s += c[i];
+  return Math.round((s / c.length) * 100) / 100;
+}
+
+/* One flat index over every priced product. Names repeat across sections -
+   "Yasuo, Unforgiven" is a Playable, an Overnumber and a Signature at three
+   very different prices - so each entry carries its section and set, and the
+   picker shows both. Choosing the wrong one is the easy mistake here. */
+function buildDeckIndex() {
+  var out = [];
+  var add = function (groups, label) {
+    (groups || []).forEach(function (g) {
+      (g.cards || []).forEach(function (c) {
+        out.push({ id: c.id, n: c.n, set: g.set, section: label,
+                   a: (c.a == null ? null : c.a), avg: avgSolds(c.c),
+                   nSales: (c.c || []).length, fold: foldName(c.n) });
+      });
+    });
+  };
+  add(SEED.signatures, "Signature");
+  add(SEED.overnumbered, "Overnumber");
+  add(SEED.catalog, "Playable");
+  return out;
+}
+
+var DECK_INDEX = null;
+var deckRows = [];
+
+(function setupDeck() {
+  var box   = document.getElementById("deckInput");
+  var sug   = document.getElementById("deckSuggest");
+  var body  = document.getElementById("deckbody");
+  var foot  = document.getElementById("deckfoot");
+  var note  = document.getElementById("decknote");
+  var clear = document.getElementById("deckClear");
+  if (!box || !sug || !body || !foot) return;
+
+  var matches = [], active = -1;
+
+  function search(term) {
+    var f = foldName(term);
+    if (!f) return [];
+    if (!DECK_INDEX) DECK_INDEX = buildDeckIndex();
+    /* Name-start matches first: typing "seal" should offer Seal of Rage before
+       every card with "seal" buried in the middle of its name. */
+    var starts = [], inside = [];
+    for (var i = 0; i < DECK_INDEX.length; i++) {
+      var e = DECK_INDEX[i], at = e.fold.indexOf(f);
+      if (at === 0) starts.push(e);
+      else if (at > 0) inside.push(e);
+    }
+    return starts.concat(inside).slice(0, 12);
+  }
+
+  function renderSuggest() {
+    if (!matches.length) {
+      sug.innerHTML = '<div class="deck__none">No card matches that name.</div>';
+    } else {
+      sug.innerHTML = matches.map(function (e, i) {
+        return '<div class="deck__opt' + (i === active ? " is-active" : "") + '" role="option" ' +
+          'data-i="' + i + '" aria-selected="' + (i === active ? "true" : "false") + '">' +
+          '<b>' + e.n + '</b>' +
+          '<span>' + e.section + ' &middot; ' + e.set + '</span>' +
+          '<em>' + (e.a == null ? "no ask" : money(e.a)) + '</em></div>';
+      }).join("");
+    }
+    sug.className = "deck__suggest on";
+    box.setAttribute("aria-expanded", "true");
+  }
+
+  function closeSuggest() {
+    sug.className = "deck__suggest";
+    sug.innerHTML = "";
+    box.setAttribute("aria-expanded", "false");
+    active = -1;
+  }
+
+  function addCard(e) {
+    if (!e) return;
+    for (var i = 0; i < deckRows.length; i++) {
+      if (deckRows[i].e.id === e.id) { deckRows[i].q += 1; renderDeck(); return; }
+    }
+    deckRows.push({ e: e, q: 1 });
+    renderDeck();
+  }
+
+  /* Totals are recomputed in place rather than by re-rendering the tbody, so
+     typing in a quantity box does not yank the caret out of it. */
+  function refreshTotals() {
+    var askTotal = 0, soldTotal = 0, noAsk = 0, noSold = 0, cards = 0;
+    var trs = body.querySelectorAll("tr");
+    deckRows.forEach(function (r, i) {
+      var lineAsk  = r.e.a   == null ? null : r.e.a   * r.q;
+      var lineSold = r.e.avg == null ? null : r.e.avg * r.q;
+      cards += r.q;
+      if (lineAsk  == null) noAsk  += r.q; else askTotal  += lineAsk;
+      if (lineSold == null) noSold += r.q; else soldTotal += lineSold;
+      var tds = trs[i] ? trs[i].querySelectorAll("td") : [];
+      if (tds[4]) tds[4].innerHTML = lineAsk  == null ? '<span class="dim">-</span>' : money(lineAsk);
+      if (tds[5]) tds[5].innerHTML = lineSold == null ? '<span class="dim">-</span>' : money(lineSold);
+    });
+
+    foot.innerHTML = deckRows.length
+      ? '<tr><td class="deck__lbl" colspan="4">' + cards +
+        (cards === 1 ? " card" : " cards") + ' &middot; totals</td>' +
+        '<td class="deck__tot">' + money(askTotal) + '</td>' +
+        '<td class="deck__tot sold">' + money(soldTotal) + '</td><td></td></tr>'
+      : "";
+
+    var bits = [];
+    if (noAsk)  bits.push(noAsk  + (noAsk  === 1 ? " copy has"   : " copies have") +
+                          " nothing listed, so it is out of the ask total");
+    if (noSold) bits.push(noSold + (noSold === 1 ? " copy has"   : " copies have") +
+                          " no recorded sales, so it is out of the sold total");
+    if (note) note.textContent = bits.join("; ");
+  }
+
+  function renderDeck() {
+    if (!deckRows.length) {
+      body.innerHTML = '<tr><td colspan="7" class="emptynote">' +
+        'Nothing added yet. Type a card name above to start a list.</td></tr>';
+      foot.innerHTML = "";
+      if (note) note.textContent = "";
+      return;
+    }
+    body.innerHTML = deckRows.map(function (r, i) {
+      var e = r.e;
+      return '<tr>' +
+        '<td><input class="deck__qty" type="number" min="1" max="999" value="' + r.q +
+          '" data-i="' + i + '" aria-label="Quantity"></td>' +
+        '<td class="card ind">' + e.n +
+          '<span class="rar">' + e.section + ' &middot; ' + e.set + '</span></td>' +
+        '<td class="n">' + (e.a == null ? '<span class="dim">none listed</span>' : money(e.a)) + '</td>' +
+        '<td class="n">' + (e.avg == null
+            ? '<span class="dim">no sales</span>'
+            : money(e.avg) + '<span class="dim"> of ' + e.nSales + '</span>') + '</td>' +
+        '<td class="n big"></td>' +
+        '<td class="n big"></td>' +
+        '<td><button class="deck__x" data-del="' + i + '" aria-label="Remove">&times;</button></td>' +
+      '</tr>';
+    }).join("");
+    refreshTotals();
+  }
+
+  box.addEventListener("input", function () {
+    matches = search(box.value);
+    active = matches.length ? 0 : -1;
+    if (box.value.trim()) renderSuggest(); else closeSuggest();
+  });
+
+  box.addEventListener("keydown", function (ev) {
+    if (ev.key === "Escape") { closeSuggest(); return; }
+    if (!matches.length) return;
+    if (ev.key === "ArrowDown") {
+      active = (active + 1) % matches.length; renderSuggest(); ev.preventDefault();
+    } else if (ev.key === "ArrowUp") {
+      active = (active - 1 + matches.length) % matches.length; renderSuggest(); ev.preventDefault();
+    } else if (ev.key === "Enter") {
+      if (active >= 0) { addCard(matches[active]); box.value = ""; matches = []; closeSuggest(); }
+      ev.preventDefault();
+    }
+  });
+
+  /* mousedown, not click: the input blurs before a click lands and the list
+     would already be gone. */
+  sug.addEventListener("mousedown", function (ev) {
+    var opt = ev.target && ev.target.closest ? ev.target.closest(".deck__opt") : null;
+    if (!opt) return;
+    ev.preventDefault();
+    addCard(matches[+opt.getAttribute("data-i")]);
+    box.value = ""; matches = []; closeSuggest();
+  });
+
+  document.addEventListener("click", function (ev) {
+    if (!box.contains(ev.target) && !sug.contains(ev.target)) closeSuggest();
+  });
+
+  body.addEventListener("input", function (ev) {
+    var t = ev.target;
+    if (!t || !t.className || t.className.indexOf("deck__qty") < 0) return;
+    var i = +t.getAttribute("data-i"), v = parseInt(t.value, 10);
+    if (!(v > 0)) v = 1;
+    if (v > 999) v = 999;
+    if (!deckRows[i]) return;
+    deckRows[i].q = v;
+    refreshTotals();
+  });
+
+  body.addEventListener("click", function (ev) {
+    var t = ev.target;
+    if (!t || !t.getAttribute) return;
+    var del = t.getAttribute("data-del");
+    if (del === null) return;
+    deckRows.splice(+del, 1);
+    renderDeck();
+  });
+
+  if (clear) clear.addEventListener("click", function () {
+    deckRows = [];
+    box.value = "";
+    matches = [];
+    closeSuggest();
+    renderDeck();
+  });
+
+  window.__renderDeck = renderDeck;
+  renderDeck();
 })();
 
 drawAll();

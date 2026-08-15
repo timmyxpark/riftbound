@@ -5,7 +5,7 @@
     {
       "set": "Origins",
       "code": "OGN",
-      "ask": 1604.99,
+      "ask": 1599.99,
       "clears": [
         1610,
         1652,
@@ -15,14 +15,14 @@
       ],
       "floor": 1015.99,
       "floorRecent": 1024.99,
-      "volNow": 94,
+      "volNow": 95,
       "volPrev": 128,
       "reprint": -2,
       "reprintWhy": "Reprints actively rolling out, Riot says not the last",
       "event": 1,
       "eventWhy": "Standard legal through the RC season",
-      "trendPct": 5.7,
-      "rangePct": 76,
+      "trendPct": 4.8,
+      "rangePct": 74,
       "weeks": [
         "2025-09-01",
         "2025-09-08",
@@ -272,7 +272,7 @@
         1982.71,
         2017.01,
         1907.57,
-        1774.23
+        1757.84
       ]
     },
     {
@@ -288,14 +288,14 @@
       ],
       "floor": 799.99,
       "floorRecent": 799.99,
-      "volNow": 105,
+      "volNow": 110,
       "volPrev": 111,
       "reprint": -2,
       "reprintWhy": "Riot committed to reprinting Standard-legal booster sets",
       "event": 1,
       "eventWhy": "Standard legal through the RC season",
-      "trendPct": 13.1,
-      "rangePct": 48,
+      "trendPct": 11.3,
+      "rangePct": 45,
       "weeks": [
         "2025-11-10",
         "2025-11-17",
@@ -505,13 +505,13 @@
         1165.5,
         1228.7,
         1266.13,
-        1206.43
+        1183.47
       ]
     },
     {
       "set": "Unleashed",
       "code": "UNL",
-      "ask": 858.99,
+      "ask": 989.99,
       "clears": [
         859,
         859,
@@ -521,13 +521,13 @@
       ],
       "floor": 564.99,
       "floorRecent": 564.99,
-      "volNow": 122,
+      "volNow": 124,
       "volPrev": 131,
       "reprint": -2,
       "reprintWhy": "Riot committed to reprinting Standard-legal booster sets",
       "event": 1,
       "eventWhy": "Strongest recent meta per Riot; Standard legal",
-      "trendPct": 12.7,
+      "trendPct": 12.9,
       "rangePct": 23,
       "weeks": [
         "2026-03-02",
@@ -578,7 +578,7 @@
         799.99,
         811.48,
         809.74,
-        858.75
+        879.25
       ],
       "low": [
         1679.05,
@@ -628,7 +628,7 @@
         875.0,
         897.98,
         894.5,
-        858.99
+        900.0
       ],
       "market": [
         1679.52,
@@ -653,13 +653,13 @@
         852.2,
         858.29,
         837.27,
-        858.46
+        860.14
       ]
     },
     {
       "set": "Vendetta",
       "code": "VEN",
-      "ask": 829.94,
+      "ask": 882.0,
       "clears": [
         882,
         883,
@@ -669,14 +669,14 @@
       ],
       "floor": 719.98,
       "floorRecent": 719.98,
-      "volNow": 401,
+      "volNow": 409,
       "volPrev": 129,
       "reprint": -1,
       "reprintWhy": "Newest set, initial print still flowing",
       "event": 2,
       "eventWhy": "RQ season live; volume tripled in 4 weeks",
-      "trendPct": 5.5,
-      "rangePct": 86,
+      "trendPct": 4.5,
+      "rangePct": 81,
       "weeks": [
         "2026-06-15",
         "2026-06-22",
@@ -731,7 +731,7 @@
         806.07,
         807.64,
         904.5,
-        877.31
+        867.78
       ]
     },
     {

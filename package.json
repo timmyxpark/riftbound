@@ -5,7 +5,7 @@
   "description": "Static Riftbound TCG pricing board, generated from template + snapshot",
   "scripts": {
     "build": "python3 scripts/build.py snapshot.json template.html board.html",
-    "test": "node scripts/test_chart.js && node scripts/test_board.js board.html && node scripts/test_filter.js board.html",
+    "test": "node scripts/test_chart.js && node scripts/test_board.js board.html && node scripts/test_filter.js board.html && node scripts/test_deck.js board.html",
     "standalone": "python3 scripts/standalone.py board.html board.standalone.html",
     "all": "npm run build && npm test && npm run standalone"
   },

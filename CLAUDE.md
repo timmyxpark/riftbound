@@ -14,6 +14,7 @@ python3 scripts/build.py snapshot.json template.html board.html
 node scripts/test_chart.js               # chart geometry in isolation
 node scripts/test_board.js board.html    # loads the built board in jsdom
 node scripts/test_filter.js board.html   # types into the name filter, checks rows
+node scripts/test_deck.js board.html     # drives the deck pricer, checks totals
 ```
 
 Editing `board.html` directly means the next build silently discards the change.
@@ -23,7 +24,7 @@ Change `template.html` or `snapshot.json`.
 
 ## Run the tests before saying anything works
 
-All three suites must pass. They exist because of specific bugs that shipped:
+All four suites must pass. They exist because of specific bugs that shipped:
 
 - `build.py` fails the build on drifted card counts. The stored Origins catalog
   was missing two real cards for weeks before a count check caught it.
@@ -31,6 +32,8 @@ All three suites must pass. They exist because of specific bugs that shipped:
   bug in an `onerror` attribute that killed the entire page script.
 - Two suites take an expected catalog row count as `argv[3]`, because Playables
   grows as sets land. Update it deliberately, don't delete the assertion.
+- `test_deck.js` recomputes the deck pricer's totals from `snapshot.json`
+  rather than trusting the page, so an ask/sold mix-up cannot pass.
 
 ## Data rules that are easy to get wrong
 
