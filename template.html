@@ -533,10 +533,15 @@
   #deckfoot td { border-top: 2px solid var(--grid2); background: #FBFCFE; padding: 11px 10px; }
   .deck__lbl { text-align: right; font-size: 10px; font-weight: 600; letter-spacing: 0.07em;
                text-transform: uppercase; color: var(--faint); }
-  /* Sold totals take the same green the market line uses everywhere else. */
+  /* Sold totals take the same green the market line uses everywhere else, and
+     Max gets the deep blue the tabs and set banners use - it is the headline
+     number, so it reads strongest without a background tint that would have to
+     out-specify the zebra striping. */
   .deck__tot { font-family: var(--mono); font-size: 15px; font-weight: 700;
                font-variant-numeric: tabular-nums; white-space: nowrap; }
   .deck__tot.sold { color: #2F7F55; }
+  .deck__tot.max  { color: #33436B; }
+  .deck__max { color: #33436B; font-weight: 700; }
 
   .emptynote {
     font-size: 12.5px;
@@ -729,7 +734,7 @@
   <section id="p-deck" class="tabpanel">
     <div class="sig">
       <div class="sig__title">Deck Pricer</div>
-      <div class="sig__sub">Build a list and price it two ways at once. <b>Ask</b> is the cheapest Near Mint English copy listed, shipping included - what you would have to undercut to sell. <b>Sold</b> is the average of that card's last five real sales - closer to what it actually moves for. The two totals are kept separate because they answer different questions.</div>
+      <div class="sig__sub">Build a list and price it three ways at once. <b>Asking</b> is the cheapest Near Mint English copy listed, shipping included - what you would have to undercut to sell. <b>Avg Last 5 Sold</b> is the mean of that card's last five real sales - closer to what it actually moves for. <b>Max(Ask, Sold)</b> takes whichever is higher for each card and totals those, so a card with nothing listed still counts at what it last sold for rather than at zero.</div>
 
       <div class="deck__add">
         <div class="deck__box">
@@ -746,8 +751,8 @@
           <table>
             <thead>
               <tr>
-                <th>Qty</th><th>Card</th><th>Ask each</th><th>Avg last 5</th>
-                <th>Ask total</th><th>Sold total</th><th></th>
+                <th>Qty</th><th>Card</th><th>Asking</th><th>Avg Last 5 Sold</th>
+                <th>Ask total</th><th>Sold total</th><th>Max(Ask, Sold)</th><th></th>
               </tr>
             </thead>
             <tbody id="deckbody"></tbody>
@@ -1804,24 +1809,34 @@ var deckRows = [];
   /* Totals are recomputed in place rather than by re-rendering the tbody, so
      typing in a quantity box does not yank the caret out of it. */
   function refreshTotals() {
-    var askTotal = 0, soldTotal = 0, noAsk = 0, noSold = 0, cards = 0;
+    var askTotal = 0, soldTotal = 0, maxTotal = 0, noAsk = 0, noSold = 0, cards = 0;
     var trs = body.querySelectorAll("tr");
     deckRows.forEach(function (r, i) {
       var lineAsk  = r.e.a   == null ? null : r.e.a   * r.q;
       var lineSold = r.e.avg == null ? null : r.e.avg * r.q;
+      /* Whichever side of the card is worth more. A card missing one of the two
+         falls back to the side it has rather than to zero, so an unlisted card
+         still counts at what it last sold for. */
+      var lineMax = (lineAsk == null && lineSold == null) ? null
+                  : (lineAsk  == null) ? lineSold
+                  : (lineSold == null) ? lineAsk
+                  : Math.max(lineAsk, lineSold);
       cards += r.q;
       if (lineAsk  == null) noAsk  += r.q; else askTotal  += lineAsk;
       if (lineSold == null) noSold += r.q; else soldTotal += lineSold;
+      if (lineMax != null) maxTotal += lineMax;
       var tds = trs[i] ? trs[i].querySelectorAll("td") : [];
       if (tds[4]) tds[4].innerHTML = lineAsk  == null ? '<span class="dim">-</span>' : money(lineAsk);
       if (tds[5]) tds[5].innerHTML = lineSold == null ? '<span class="dim">-</span>' : money(lineSold);
+      if (tds[6]) tds[6].innerHTML = lineMax  == null ? '<span class="dim">-</span>' : money(lineMax);
     });
 
     foot.innerHTML = deckRows.length
       ? '<tr><td class="deck__lbl" colspan="4">' + cards +
         (cards === 1 ? " card" : " cards") + ' &middot; totals</td>' +
         '<td class="deck__tot">' + money(askTotal) + '</td>' +
-        '<td class="deck__tot sold">' + money(soldTotal) + '</td><td></td></tr>'
+        '<td class="deck__tot sold">' + money(soldTotal) + '</td>' +
+        '<td class="deck__tot max">' + money(maxTotal) + '</td><td></td></tr>'
       : "";
 
     var bits = [];
@@ -1834,7 +1849,7 @@ var deckRows = [];
 
   function renderDeck() {
     if (!deckRows.length) {
-      body.innerHTML = '<tr><td colspan="7" class="emptynote">' +
+      body.innerHTML = '<tr><td colspan="8" class="emptynote">' +
         'Nothing added yet. Type a card name above to start a list.</td></tr>';
       foot.innerHTML = "";
       if (note) note.textContent = "";
@@ -1853,6 +1868,7 @@ var deckRows = [];
             : money(e.avg) + '<span class="dim"> of ' + e.nSales + '</span>') + '</td>' +
         '<td class="n big"></td>' +
         '<td class="n big"></td>' +
+        '<td class="n big deck__max"></td>' +
         '<td><button class="deck__x" data-del="' + i + '" aria-label="Remove">&times;</button></td>' +
       '</tr>';
     }).join("");

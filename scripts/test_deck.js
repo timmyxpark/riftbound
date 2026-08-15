@@ -135,12 +135,36 @@ if (opts().length) pick(0);
     return t + (v ? parseFloat(v) : 0);
   }, 0);
   const totals = foot.querySelectorAll(".deck__tot");
-  ok(totals.length === 2, "both totals are shown");
+  ok(totals.length === 3, "all three totals are shown");
   const askTot = parseFloat(totals[0].textContent.replace(/[^0-9.]/g, ""));
   const soldTot = parseFloat(totals[1].textContent.replace(/[^0-9.]/g, ""));
   ok(Math.abs(askTot - sum(4)) < 0.02, `ask total sums the ask column (${money(askTot)})`);
   ok(Math.abs(soldTot - sum(5)) < 0.02, `sold total sums the sold column (${money(soldTot)})`);
   ok(askTot !== soldTot, "the two totals are genuinely separate numbers");
+
+  /* Max is per row, then summed - not the larger of the two grand totals. On a
+     mixed list some cards ask high and some sold high, so the column total has
+     to be at least both and can exceed either. */
+  const maxTot = parseFloat(totals[2].textContent.replace(/[^0-9.]/g, ""));
+  ok(Math.abs(maxTot - sum(6)) < 0.02, `max total sums the max column (${money(maxTot)})`);
+  ok(maxTot >= askTot - 0.02 && maxTot >= soldTot - 0.02,
+     "max total is at least as large as both other totals");
+  rs.forEach((r, i) => {
+    const a = parseFloat(cell(r, 4).replace(/[^0-9.]/g, "")) || 0;
+    const s2 = parseFloat(cell(r, 5).replace(/[^0-9.]/g, "")) || 0;
+    const m = parseFloat(cell(r, 6).replace(/[^0-9.]/g, "")) || 0;
+    ok(Math.abs(m - Math.max(a, s2)) < 0.02,
+       `row ${i + 1} max is the larger of its ask and sold (${cell(r, 6)})`);
+  });
+}
+
+// --- column headings -------------------------------------------------------
+{
+  const heads = [...doc.querySelectorAll("#p-deck thead th")].map((h) => h.textContent.trim());
+  ok(heads[2] === "Asking", `third column is "Asking" (${heads[2]})`);
+  ok(heads[3] === "Avg Last 5 Sold", `fourth column is "Avg Last 5 Sold" (${heads[3]})`);
+  ok(heads[6] === "Max(Ask, Sold)", `seventh column is "Max(Ask, Sold)" (${heads[6]})`);
+  ok(heads.length === 8, `the table has 8 columns (${heads.length})`);
 }
 
 // --- removing and clearing -------------------------------------------------
@@ -170,6 +194,11 @@ if (opts().length) pick(0);
       const r = deckRows()[0];
       ok(/none listed/.test(cell(r, 2)), `${noAsk.n} shows "none listed" rather than $0`);
       ok(cell(r, 4) === "-", "it contributes no ask total");
+      const soldCell = cell(r, 5);
+      if (soldCell !== "-") {
+        ok(cell(r, 6) === soldCell,
+           `with no ask, Max falls back to the sold side (${cell(r, 6)})`);
+      }
       ok(/out of the ask total/.test(doc.getElementById("decknote").textContent),
          "the note explains what was left out");
     }
