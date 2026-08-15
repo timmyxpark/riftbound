@@ -542,6 +542,11 @@
   .deck__tot.sold { color: #2F7F55; }
   .deck__tot.max  { color: #33436B; }
   .deck__max { color: #33436B; font-weight: 700; }
+  /* Marks an ask that was borrowed from the card's own sold average, in the
+     same amber the "hold" signal uses - it is a substitution, not a listing. */
+  .deck__sub { display: block; font-family: "Inter", system-ui, sans-serif;
+               font-size: 8.5px; font-weight: 700; letter-spacing: 0.06em;
+               text-transform: uppercase; color: var(--butter); margin-top: 2px; }
 
   .emptynote {
     font-size: 12.5px;
@@ -734,7 +739,7 @@
   <section id="p-deck" class="tabpanel">
     <div class="sig">
       <div class="sig__title">Deck Pricer</div>
-      <div class="sig__sub">Build a list and price it three ways at once. <b>Asking</b> is the cheapest Near Mint English copy listed, shipping included - what you would have to undercut to sell. <b>Avg Last 5 Sold</b> is the mean of that card's last five real sales - closer to what it actually moves for. <b>Max(Ask, Sold)</b> takes whichever is higher for each card and totals those, so a card with nothing listed still counts at what it last sold for rather than at zero.</div>
+      <div class="sig__sub">Build a list and price it three ways at once. <b>Asking</b> is the cheapest Near Mint English copy listed, shipping included - what you would have to undercut to sell; a card with nothing listed borrows its own sold average instead of counting as zero, and the cell says so. <b>Avg Last 5 Sold</b> is the mean of that card's last five real sales - closer to what it actually moves for. <b>Max(Ask, Sold)</b> takes whichever is higher for each card and totals those.</div>
 
       <div class="deck__add">
         <div class="deck__box">
@@ -751,7 +756,7 @@
           <table>
             <thead>
               <tr>
-                <th>Qty</th><th>Card</th><th>Asking</th><th>Avg Last 5 Sold</th>
+                <th></th><th>Qty</th><th>Card</th><th>Asking</th><th>Avg Last 5 Sold</th>
                 <th>Ask total</th><th>Sold total</th><th>Max(Ask, Sold)</th><th></th>
               </tr>
             </thead>
@@ -1797,6 +1802,18 @@ var deckRows = [];
     active = -1;
   }
 
+  /* A card with nothing listed borrows its own sold average as its ask, so a
+     pile does not silently lose value. Only here - the Playables table still
+     says "none listed", because there the ask is a fact about the market.
+     The cell is labelled: an unlabelled number would read as a real listing. */
+  function askOf(e) { return e.a != null ? e.a : e.avg; }
+
+  function askCell(e) {
+    if (e.a != null) return money(e.a);
+    if (e.avg == null) return '<span class="dim">no ask, no sales</span>';
+    return money(e.avg) + '<span class="deck__sub">from sold avg</span>';
+  }
+
   function addCard(e) {
     if (!e) return;
     for (var i = 0; i < deckRows.length; i++) {
@@ -1809,11 +1826,15 @@ var deckRows = [];
   /* Totals are recomputed in place rather than by re-rendering the tbody, so
      typing in a quantity box does not yank the caret out of it. */
   function refreshTotals() {
-    var askTotal = 0, soldTotal = 0, maxTotal = 0, noAsk = 0, noSold = 0, cards = 0;
+    var askTotal = 0, soldTotal = 0, maxTotal = 0;
+    var subbed = 0, noSold = 0, neither = 0, cards = 0;
     var trs = body.querySelectorAll("tr");
     deckRows.forEach(function (r, i) {
-      var lineAsk  = r.e.a   == null ? null : r.e.a   * r.q;
-      var lineSold = r.e.avg == null ? null : r.e.avg * r.q;
+      var ask      = askOf(r.e);
+      var lineAsk  = ask       == null ? null : ask       * r.q;
+      var lineSold = r.e.avg   == null ? null : r.e.avg   * r.q;
+      if (r.e.a == null && r.e.avg != null) subbed += r.q;
+      if (r.e.a == null && r.e.avg == null) neither += r.q;
       /* Whichever side of the card is worth more. A card missing one of the two
          falls back to the side it has rather than to zero, so an unlisted card
          still counts at what it last sold for. */
@@ -1822,17 +1843,17 @@ var deckRows = [];
                   : (lineSold == null) ? lineAsk
                   : Math.max(lineAsk, lineSold);
       cards += r.q;
-      if (lineAsk  == null) noAsk  += r.q; else askTotal  += lineAsk;
+      if (lineAsk  != null) askTotal  += lineAsk;
       if (lineSold == null) noSold += r.q; else soldTotal += lineSold;
       if (lineMax != null) maxTotal += lineMax;
       var tds = trs[i] ? trs[i].querySelectorAll("td") : [];
-      if (tds[4]) tds[4].innerHTML = lineAsk  == null ? '<span class="dim">-</span>' : money(lineAsk);
-      if (tds[5]) tds[5].innerHTML = lineSold == null ? '<span class="dim">-</span>' : money(lineSold);
-      if (tds[6]) tds[6].innerHTML = lineMax  == null ? '<span class="dim">-</span>' : money(lineMax);
+      if (tds[5]) tds[5].innerHTML = lineAsk  == null ? '<span class="dim">-</span>' : money(lineAsk);
+      if (tds[6]) tds[6].innerHTML = lineSold == null ? '<span class="dim">-</span>' : money(lineSold);
+      if (tds[7]) tds[7].innerHTML = lineMax  == null ? '<span class="dim">-</span>' : money(lineMax);
     });
 
     foot.innerHTML = deckRows.length
-      ? '<tr><td class="deck__lbl" colspan="4">' + cards +
+      ? '<tr><td class="deck__lbl" colspan="5">' + cards +
         (cards === 1 ? " card" : " cards") + ' &middot; totals</td>' +
         '<td class="deck__tot">' + money(askTotal) + '</td>' +
         '<td class="deck__tot sold">' + money(soldTotal) + '</td>' +
@@ -1840,16 +1861,18 @@ var deckRows = [];
       : "";
 
     var bits = [];
-    if (noAsk)  bits.push(noAsk  + (noAsk  === 1 ? " copy has"   : " copies have") +
-                          " nothing listed, so it is out of the ask total");
-    if (noSold) bits.push(noSold + (noSold === 1 ? " copy has"   : " copies have") +
-                          " no recorded sales, so it is out of the sold total");
+    if (subbed)  bits.push(subbed  + (subbed  === 1 ? " copy has"  : " copies have") +
+                           " nothing listed, so its ask falls back to its sold average");
+    if (noSold)  bits.push(noSold  + (noSold  === 1 ? " copy has"  : " copies have") +
+                           " no recorded sales, so it is out of the sold total");
+    if (neither) bits.push(neither + (neither === 1 ? " copy has"  : " copies have") +
+                           " neither an ask nor a sale, so it counts as nothing");
     if (note) note.textContent = bits.join("; ");
   }
 
   function renderDeck() {
     if (!deckRows.length) {
-      body.innerHTML = '<tr><td colspan="8" class="emptynote">' +
+      body.innerHTML = '<tr><td colspan="9" class="emptynote">' +
         'Nothing added yet. Type a card name above to start a list.</td></tr>';
       foot.innerHTML = "";
       if (note) note.textContent = "";
@@ -1858,11 +1881,12 @@ var deckRows = [];
     body.innerHTML = deckRows.map(function (r, i) {
       var e = r.e;
       return '<tr>' +
+        '<td class="thumb"><img loading="lazy" alt="" onerror=\'this.style.display="none"\' src="https://tcgplayer-cdn.tcgplayer.com/product/' + e.id + '_200w.jpg"></td>' +
         '<td><input class="deck__qty" type="number" min="1" max="999" value="' + r.q +
           '" data-i="' + i + '" aria-label="Quantity"></td>' +
         '<td class="card ind">' + e.n +
           '<span class="rar">' + e.section + ' &middot; ' + e.set + '</span></td>' +
-        '<td class="n">' + (e.a == null ? '<span class="dim">none listed</span>' : money(e.a)) + '</td>' +
+        '<td class="n">' + askCell(e) + '</td>' +
         '<td class="n">' + (e.avg == null
             ? '<span class="dim">no sales</span>'
             : money(e.avg) + '<span class="dim"> of ' + e.nSales + '</span>') + '</td>' +

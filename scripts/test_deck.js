@@ -96,11 +96,11 @@ for (const key of ["signatures", "overnumbered", "catalog"]) {
   const card = all.find((c) => c.n === name && c.a != null);
   ok(!!card, `row card ${name} found in the snapshot`);
   const mean = Math.round((card.c.reduce((a, b) => a + b, 0) / card.c.length) * 100) / 100;
-  ok(cell(row, 2) === money(card.a), `ask each is the card's ask (${cell(row, 2)})`);
-  ok(cell(row, 3).startsWith(money(mean)),
+  ok(cell(row, 3) === money(card.a), `ask each is the card's ask (${cell(row, 3)})`);
+  ok(cell(row, 4).startsWith(money(mean)),
      `avg last 5 is the mean of its ${card.c.length} sales (${money(mean)})`);
-  ok(cell(row, 4) === money(card.a), "ask total at qty 1 equals ask each");
-  ok(cell(row, 5).startsWith(money(mean)), "sold total at qty 1 equals the mean");
+  ok(cell(row, 5) === money(card.a), "ask total at qty 1 equals ask each");
+  ok(cell(row, 6).startsWith(money(mean)), "sold total at qty 1 equals the mean");
 }
 
 // --- quantity -------------------------------------------------------------
@@ -113,15 +113,15 @@ for (const key of ["signatures", "overnumbered", "catalog"]) {
   qty.value = "3";
   qty.dispatchEvent(new win.Event("input", { bubbles: true }));
   const r = deckRows()[0];
-  ok(cell(r, 4) === money(card.a * 3), `qty 3 multiplies the ask total (${cell(r, 4)})`);
-  ok(cell(r, 5) === money(mean * 3), `qty 3 multiplies the sold total (${cell(r, 5)})`);
+  ok(cell(r, 5) === money(card.a * 3), `qty 3 multiplies the ask total (${cell(r, 5)})`);
+  ok(cell(r, 6) === money(mean * 3), `qty 3 multiplies the sold total (${cell(r, 6)})`);
   ok(!!doc.querySelector(".deck__qty"), "the quantity box survives a totals refresh");
   ok(/3 cards/.test(foot.textContent), "the totals row counts copies, not lines");
 
   // a nonsense quantity must not poison the totals
   qty.value = "0";
   qty.dispatchEvent(new win.Event("input", { bubbles: true }));
-  ok(cell(deckRows()[0], 4) === money(card.a), "quantity 0 falls back to 1");
+  ok(cell(deckRows()[0], 5) === money(card.a), "quantity 0 falls back to 1");
 }
 
 // --- two cards, and the totals --------------------------------------------
@@ -138,33 +138,43 @@ if (opts().length) pick(0);
   ok(totals.length === 3, "all three totals are shown");
   const askTot = parseFloat(totals[0].textContent.replace(/[^0-9.]/g, ""));
   const soldTot = parseFloat(totals[1].textContent.replace(/[^0-9.]/g, ""));
-  ok(Math.abs(askTot - sum(4)) < 0.02, `ask total sums the ask column (${money(askTot)})`);
-  ok(Math.abs(soldTot - sum(5)) < 0.02, `sold total sums the sold column (${money(soldTot)})`);
+  ok(Math.abs(askTot - sum(5)) < 0.02, `ask total sums the ask column (${money(askTot)})`);
+  ok(Math.abs(soldTot - sum(6)) < 0.02, `sold total sums the sold column (${money(soldTot)})`);
   ok(askTot !== soldTot, "the two totals are genuinely separate numbers");
 
   /* Max is per row, then summed - not the larger of the two grand totals. On a
      mixed list some cards ask high and some sold high, so the column total has
      to be at least both and can exceed either. */
   const maxTot = parseFloat(totals[2].textContent.replace(/[^0-9.]/g, ""));
-  ok(Math.abs(maxTot - sum(6)) < 0.02, `max total sums the max column (${money(maxTot)})`);
+  ok(Math.abs(maxTot - sum(7)) < 0.02, `max total sums the max column (${money(maxTot)})`);
   ok(maxTot >= askTot - 0.02 && maxTot >= soldTot - 0.02,
      "max total is at least as large as both other totals");
   rs.forEach((r, i) => {
-    const a = parseFloat(cell(r, 4).replace(/[^0-9.]/g, "")) || 0;
-    const s2 = parseFloat(cell(r, 5).replace(/[^0-9.]/g, "")) || 0;
-    const m = parseFloat(cell(r, 6).replace(/[^0-9.]/g, "")) || 0;
+    const a = parseFloat(cell(r, 5).replace(/[^0-9.]/g, "")) || 0;
+    const s2 = parseFloat(cell(r, 6).replace(/[^0-9.]/g, "")) || 0;
+    const m = parseFloat(cell(r, 7).replace(/[^0-9.]/g, "")) || 0;
     ok(Math.abs(m - Math.max(a, s2)) < 0.02,
-       `row ${i + 1} max is the larger of its ask and sold (${cell(r, 6)})`);
+       `row ${i + 1} max is the larger of its ask and sold (${cell(r, 7)})`);
   });
+}
+
+// --- card art -------------------------------------------------------------
+{
+  const rs = deckRows();
+  const imgs = rs.map((r) => r.querySelector("td.thumb img")).filter(Boolean);
+  ok(imgs.length === rs.length,
+     `every row shows the card art (${imgs.length}/${rs.length})`);
+  ok(imgs.every((im) => /\/product\/\d+_|^data:image/.test(im.getAttribute("src") || "")),
+     "each image points at its own product");
 }
 
 // --- column headings -------------------------------------------------------
 {
   const heads = [...doc.querySelectorAll("#p-deck thead th")].map((h) => h.textContent.trim());
-  ok(heads[2] === "Asking", `third column is "Asking" (${heads[2]})`);
-  ok(heads[3] === "Avg Last 5 Sold", `fourth column is "Avg Last 5 Sold" (${heads[3]})`);
-  ok(heads[6] === "Max(Ask, Sold)", `seventh column is "Max(Ask, Sold)" (${heads[6]})`);
-  ok(heads.length === 8, `the table has 8 columns (${heads.length})`);
+  ok(heads[3] === "Asking", `Asking column present (${heads[3]})`);
+  ok(heads[4] === "Avg Last 5 Sold", `Avg Last 5 Sold column present (${heads[4]})`);
+  ok(heads[7] === "Max(Ask, Sold)", `Max(Ask, Sold) column present (${heads[7]})`);
+  ok(heads.length === 9, `the table has 9 columns (${heads.length})`);
 }
 
 // --- removing and clearing -------------------------------------------------
@@ -192,15 +202,18 @@ if (opts().length) pick(0);
     } else {
       pick(i);
       const r = deckRows()[0];
-      ok(/none listed/.test(cell(r, 2)), `${noAsk.n} shows "none listed" rather than $0`);
-      ok(cell(r, 4) === "-", "it contributes no ask total");
-      const soldCell = cell(r, 5);
-      if (soldCell !== "-") {
-        ok(cell(r, 6) === soldCell,
-           `with no ask, Max falls back to the sold side (${cell(r, 6)})`);
-      }
-      ok(/out of the ask total/.test(doc.getElementById("decknote").textContent),
-         "the note explains what was left out");
+      const mean = Math.round((noAsk.c.reduce((a, b) => a + b, 0) / noAsk.c.length) * 100) / 100;
+      /* Nothing listed: the ask borrows the card's own sold average so the pile
+         does not silently lose value, and the cell says where it came from. */
+      ok(cell(r, 3).startsWith(money(mean)),
+         `${noAsk.n} borrows its sold average as an ask (${money(mean)})`);
+      ok(/from sold avg/i.test(cell(r, 3)), "the cell labels the borrowed ask");
+      ok(!!r.querySelector(".deck__sub"), "the label is its own element, not bare text");
+      ok(cell(r, 5) === money(mean), "it now contributes to the ask total");
+      ok(cell(r, 5) === cell(r, 6), "ask and sold totals match on a borrowed ask");
+      ok(cell(r, 7) === cell(r, 6), "Max equals both when the ask was borrowed");
+      ok(/falls back to its sold average/.test(doc.getElementById("decknote").textContent),
+         "the note explains the fallback");
     }
   }
 }
