@@ -548,6 +548,69 @@
                font-size: 8.5px; font-weight: 700; letter-spacing: 0.06em;
                text-transform: uppercase; color: var(--butter); margin-top: 2px; }
 
+  /* table left, saved lists right. min-width:0 on the main column is what lets
+     the table keep its own horizontal scroll instead of stretching the flex row */
+  .deck__layout { display: flex; gap: 16px; align-items: flex-start; }
+  .deck__main { flex: 1 1 auto; min-width: 0; }
+  .deck__saved {
+    flex: 0 0 208px; background: var(--card); border: 1px solid var(--grid2);
+    border-radius: 8px; padding: 13px 13px 11px; text-align: left;
+  }
+  @media (max-width: 900px) {
+    .deck__layout { flex-direction: column; }
+    .deck__saved { flex: 1 1 auto; width: 100%; }
+  }
+
+  /* The deck table carries nine columns beside the saved panel, so its art runs
+     smaller here than in the browsing tables - it is an identification aid, not
+     the point of the row. Scoped by id so it beats the artifact build's global
+     .thumb img rule without depending on stylesheet order. */
+  /* nine columns in a narrowed main column: buy the last one its room back */
+  #p-deck thead th, #p-deck tbody td { padding-left: 7px; padding-right: 7px; }
+  #p-deck td.thumb { width: 62px; padding: 6px 4px 6px 8px; }
+  #p-deck td.thumb img { width: 62px; min-width: 62px; }
+  #p-deck .card.ind { padding-left: 10px; }
+
+  .deck__saved-head {
+    font-size: 10px; font-weight: 700; letter-spacing: 0.09em; text-transform: uppercase;
+    color: var(--faint); margin-bottom: 10px;
+  }
+  .deck__save-row { display: flex; gap: 6px; margin-bottom: 11px; }
+  .deck__save-row input {
+    flex: 1 1 auto; min-width: 0; font-family: "Inter", system-ui, sans-serif;
+    font-size: 12px; color: var(--ink); background: var(--card);
+    border: 1px solid var(--grid2); border-radius: 6px; padding: 5px 9px; outline: none;
+  }
+  .deck__save-row input:focus { border-color: var(--peri); box-shadow: 0 0 0 3px var(--peribg); }
+  .deck__save-row input::placeholder { color: var(--faint); }
+  .deck__save-row .chip { padding: 5px 11px; font-size: 11.5px; flex: 0 0 auto; }
+
+  .deck__deck {
+    display: flex; align-items: baseline; gap: 6px;
+    padding: 7px 0; border-top: 1px solid var(--grid);
+  }
+  .deck__deck:first-of-type { border-top: 0; }
+  .deck__deck b { font-size: 12.5px; font-weight: 600; color: var(--ink);
+                  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .deck__deck span { font-family: var(--mono); font-size: 9.5px; color: var(--faint);
+                     white-space: nowrap; }
+  .deck__deck-btns { margin-left: auto; display: flex; gap: 4px; flex: 0 0 auto; }
+  .deck__deck button {
+    border: 1px solid var(--grid2); background: var(--card); cursor: pointer;
+    font-family: "Inter", system-ui, sans-serif; font-size: 10.5px; font-weight: 600;
+    color: var(--soft); border-radius: 5px; padding: 3px 8px;
+  }
+  .deck__deck button:hover { border-color: #A9B7D6; color: #33436B; }
+  .deck__deck button.del:hover { border-color: var(--rose); color: var(--rose); }
+  .deck__deck button:focus-visible { outline: 2px solid #7C8CC4; outline-offset: 2px; }
+
+  .deck__saved-empty { font-size: 11.5px; color: var(--faint); padding: 4px 0 8px; }
+  .deck__saved-note { font-size: 11px; color: var(--butter); margin-top: 9px; min-height: 0; }
+  .deck__saved-foot {
+    margin-top: 10px; padding-top: 9px; border-top: 1px solid var(--grid);
+    font-size: 10.5px; color: var(--faint); line-height: 1.45;
+  }
+
   .emptynote {
     font-size: 12.5px;
     color: var(--faint);
@@ -751,21 +814,37 @@
         <button class="chip chip--reset" id="deckClear">Clear list</button>
       </div>
 
-      <div class="panel">
-        <div class="scroll">
-          <table>
-            <thead>
-              <tr>
-                <th></th><th>Qty</th><th>Card</th><th>Asking</th><th>Avg Last 5 Sold</th>
-                <th>Ask total</th><th>Sold total</th><th>Max(Ask, Sold)</th><th></th>
-              </tr>
-            </thead>
-            <tbody id="deckbody"></tbody>
-            <tfoot id="deckfoot"></tfoot>
-          </table>
+      <div class="deck__layout">
+        <div class="deck__main">
+          <div class="panel">
+            <div class="scroll">
+              <table>
+                <thead>
+                  <tr>
+                    <th></th><th>Qty</th><th>Card</th><th>Asking</th><th>Avg Last 5 Sold</th>
+                    <th>Ask total</th><th>Sold total</th><th>Max(Ask, Sold)</th><th></th>
+                  </tr>
+                </thead>
+                <tbody id="deckbody"></tbody>
+                <tfoot id="deckfoot"></tfoot>
+              </table>
+            </div>
+          </div>
+          <div class="catnote" id="decknote"></div>
         </div>
+
+        <aside class="deck__saved">
+          <div class="deck__saved-head">Saved lists</div>
+          <div class="deck__save-row">
+            <input type="text" id="deckName" placeholder="Name this list"
+                   aria-label="Name for the saved list" autocomplete="off" maxlength="40">
+            <button class="chip" id="deckSave">Save</button>
+          </div>
+          <div id="deckSavedList"></div>
+          <div class="deck__saved-note" id="deckSavedNote"></div>
+          <div class="deck__saved-foot">A saved list keeps card names and quantities, never prices - loading one re-prices it against whatever the board holds now.</div>
+        </aside>
       </div>
-      <div class="catnote" id="decknote"></div>
     </div>
   </section>
 
@@ -1585,7 +1664,7 @@ function drawAll() {
       if (namF) namF.style.display =
         (panelId === "p-sig" || panelId === "p-over" || panelId === "p-cat") ? "" : "none";
       var hint = document.querySelector ? document.querySelector(".hint") : null;
-      if (hint) hint.style.display = (panelId === "p-cal" || panelId === "p-deck") ? "none" : "";
+      if (hint) hint.style.display = (panelId === "p-cal") ? "none" : "";
       /* every section starts unfiltered */
       resetFilters();
       restartCharts(document.getElementById(t.dataset.panel));
@@ -1887,9 +1966,12 @@ var deckRows = [];
         '<td class="card ind">' + e.n +
           '<span class="rar">' + e.section + ' &middot; ' + e.set + '</span></td>' +
         '<td class="n">' + askCell(e) + '</td>' +
+        /* The sale count only earns its width when the average rests on fewer
+           than the full five - "of 5" on every row is what the header says. */
         '<td class="n">' + (e.avg == null
             ? '<span class="dim">no sales</span>'
-            : money(e.avg) + '<span class="dim"> of ' + e.nSales + '</span>') + '</td>' +
+            : money(e.avg) + (e.nSales < 5
+                ? '<span class="dim"> of ' + e.nSales + '</span>' : '')) + '</td>' +
         '<td class="n big"></td>' +
         '<td class="n big"></td>' +
         '<td class="n big deck__max"></td>' +
@@ -1960,8 +2042,140 @@ var deckRows = [];
     renderDeck();
   });
 
+  /* ---------------- saved lists ----------------
+     A saved list holds card ids and quantities and nothing else. Prices move
+     every time the pull runs, so storing them would mean loading a list and
+     seeing numbers that no longer match the rest of the board; re-resolving the
+     ids against the live snapshot is the whole point.
+
+     Storage is this browser's localStorage. The page has no shared store
+     available to it, so a list saved here is visible to this browser and not to
+     anyone else opening the board. */
+  var DECK_STORE = "riftbound.decks.v1";
+  var deckMemory = [];   /* fallback when a browser refuses storage entirely */
+
+  function esc(s) {
+    return String(s == null ? "" : s).replace(/[&<>"]/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c];
+    });
+  }
+
+  function readDecks() {
+    try {
+      var raw = window.localStorage.getItem(DECK_STORE);
+      if (raw == null) return deckMemory.slice();
+      var v = JSON.parse(raw);
+      return Array.isArray(v) ? v : [];
+    } catch (e) { return deckMemory.slice(); }
+  }
+
+  function writeDecks(list) {
+    deckMemory = list.slice();
+    try { window.localStorage.setItem(DECK_STORE, JSON.stringify(list)); return true; }
+    catch (e) { return false; }
+  }
+
+  function renderSaved(msg) {
+    var host = document.getElementById("deckSavedList");
+    var noteEl = document.getElementById("deckSavedNote");
+    if (!host) return;
+    var list = readDecks();
+    if (!list.length) {
+      host.innerHTML = '<div class="deck__saved-empty">No saved lists yet. ' +
+                       'Build one, name it, and save.</div>';
+    } else {
+      host.innerHTML = list.map(function (d, i) {
+        var copies = (d.cards || []).reduce(function (t, c) { return t + (+c.q || 0); }, 0);
+        return '<div class="deck__deck" title="Saved ' + esc(d.saved || "") + '">' +
+          '<b>' + esc(d.name) + '</b>' +
+          '<span>' + copies + '</span>' +
+          '<span class="deck__deck-btns">' +
+            '<button data-load="' + i + '">Load</button>' +
+            '<button class="del" data-drop="' + i + '">Delete</button>' +
+          '</span></div>';
+      }).join("");
+    }
+    if (noteEl) noteEl.textContent = msg || "";
+  }
+
+  function saveCurrent() {
+    var nameBox = document.getElementById("deckName");
+    var name = ((nameBox && nameBox.value) || "").trim();
+    if (!deckRows.length) { renderSaved("Nothing to save - the list is empty."); return; }
+    if (!name) {
+      renderSaved("Give the list a name first.");
+      if (nameBox) nameBox.focus();
+      return;
+    }
+    var stamp = "";
+    try { stamp = new Date().toISOString().slice(0, 10); } catch (e) { stamp = ""; }
+    var entry = { name: name, saved: stamp,
+                  cards: deckRows.map(function (r) { return { id: r.e.id, q: r.q }; }) };
+
+    var list = readDecks(), at = -1;
+    for (var i = 0; i < list.length; i++) {
+      if (String(list[i].name).toLowerCase() === name.toLowerCase()) { at = i; break; }
+    }
+    if (at > -1) list[at] = entry; else list.unshift(entry);
+
+    var stored = writeDecks(list);
+    if (nameBox) nameBox.value = "";
+    renderSaved(!stored
+      ? "Kept for this visit only - this browser is blocking storage."
+      : '"' + name + '" ' + (at > -1 ? "updated." : "saved."));
+  }
+
+  function loadDeck(i) {
+    var entry = readDecks()[i];
+    if (!entry) return;
+    if (!DECK_INDEX) DECK_INDEX = buildDeckIndex();
+    var byId = {};
+    DECK_INDEX.forEach(function (e) { byId[e.id] = e; });
+
+    var rows = [], missing = 0;
+    (entry.cards || []).forEach(function (c) {
+      var e = byId[c.id];
+      if (!e) { missing++; return; }      /* a card the board no longer carries */
+      var q = parseInt(c.q, 10);
+      rows.push({ e: e, q: (q > 0 && q < 1000) ? q : 1 });
+    });
+
+    deckRows = rows;                      /* replaces whatever was in the builder */
+    renderDeck();
+    renderSaved(missing
+      ? '"' + entry.name + '" loaded - ' + missing + (missing === 1 ? " card is" : " cards are") +
+        ' no longer on the board and were skipped.'
+      : '"' + entry.name + '" loaded and re-priced.');
+  }
+
+  function dropDeck(i) {
+    var list = readDecks(), gone = list[i];
+    if (!gone) return;
+    list.splice(i, 1);
+    writeDecks(list);
+    renderSaved('"' + gone.name + '" deleted.');
+  }
+
+  var saveBtn = document.getElementById("deckSave");
+  if (saveBtn) saveBtn.addEventListener("click", saveCurrent);
+
+  var nameBox = document.getElementById("deckName");
+  if (nameBox) nameBox.addEventListener("keydown", function (ev) {
+    if (ev.key === "Enter") { ev.preventDefault(); saveCurrent(); }
+  });
+
+  var savedHost = document.getElementById("deckSavedList");
+  if (savedHost) savedHost.addEventListener("click", function (ev) {
+    var t = ev.target;
+    if (!t || !t.getAttribute) return;
+    var l = t.getAttribute("data-load"), d = t.getAttribute("data-drop");
+    if (l !== null) loadDeck(+l);
+    else if (d !== null) dropDeck(+d);
+  });
+
   window.__renderDeck = renderDeck;
   renderDeck();
+  renderSaved();
 })();
 
 drawAll();

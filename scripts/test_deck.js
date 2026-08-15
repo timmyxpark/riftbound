@@ -11,6 +11,11 @@ const file = process.argv[2] || path.join(ROOT, "board.html");
 const errors = [];
 const dom = new JSDOM(fs.readFileSync(file, "utf8"), {
   runScripts: "dangerously",
+  /* localStorage only exists on a real origin - the default about:blank has an
+     opaque one and jsdom leaves window.localStorage undefined there. The page
+     itself copes with that (it falls back to in-memory), but the saved-list
+     tests need the real thing to check what actually gets persisted. */
+  url: "https://localhost/riftbound/",
   virtualConsole: new VirtualConsole()
     .on("jsdomError", (e) => errors.push(e.message))
     .on("error", (m) => errors.push(m)),
@@ -216,6 +221,94 @@ if (opts().length) pick(0);
          "the note explains the fallback");
     }
   }
+}
+
+// --- saved lists -----------------------------------------------------------
+/* A saved list must hold ids and quantities and NOT prices: the board is
+   rebuilt on every pull, so a list that carried its own numbers would load
+   showing figures that disagree with the rest of the page. */
+{
+  const nameBox = doc.getElementById("deckName");
+  const saveBtn = doc.getElementById("deckSave");
+  const savedList = doc.getElementById("deckSavedList");
+  const savedNote = doc.getElementById("deckSavedNote");
+  const click = (el) => el.dispatchEvent(new win.MouseEvent("click", { bubbles: true }));
+  ok(!!nameBox && !!saveBtn && !!savedList, "saved-list panel is present");
+  ok(/No saved lists yet/.test(savedList.textContent), "empty state before anything is saved");
+
+  // refuses to save nothing, and refuses to save without a name
+  doc.getElementById("deckClear").dispatchEvent(new win.MouseEvent("click", { bubbles: true }));
+  click(saveBtn);
+  ok(/list is empty/.test(savedNote.textContent), "saving an empty list is refused");
+
+  type("yasuo");
+  pick(0);
+  type("teemo");
+  if (opts().length) pick(0);
+  const built = deckRows().length;
+  click(saveBtn);
+  ok(/name it first|Give the list a name/i.test(savedNote.textContent),
+     "saving without a name is refused");
+
+  // save it
+  nameBox.value = "Sell pile";
+  click(saveBtn);
+  ok(/saved/i.test(savedNote.textContent), "naming it and saving works");
+  ok(savedList.querySelectorAll(".deck__deck").length === 1, "it appears in the saved panel");
+  ok(/Sell pile/.test(savedList.textContent), "under the name given");
+  ok(nameBox.value === "", "the name box clears after saving");
+
+  // what actually got persisted
+  const raw = win.localStorage.getItem("riftbound.decks.v1");
+  ok(!!raw, "the list is written to storage");
+  const parsed = JSON.parse(raw);
+  ok(parsed.length === 1 && parsed[0].name === "Sell pile", "stored under its name");
+  const keys = new Set(parsed[0].cards.flatMap((c) => Object.keys(c)));
+  ok([...keys].every((k) => k === "id" || k === "q"),
+     `stored cards hold only id and q (${[...keys].join(",")})`);
+  ok(!/\$|"a"|"avg"|price/.test(JSON.stringify(parsed[0].cards)),
+     "no prices are stored - the list re-prices on load");
+
+  // loading replaces whatever is in the builder
+  type("astral heron");
+  if (opts().length) pick(0);
+  const beforeLoad = deckRows().length;
+  ok(beforeLoad === built + 1, "builder has an extra card before loading");
+  click(savedList.querySelector("[data-load]"));
+  ok(deckRows().length === built,
+     `loading replaces the current list rather than appending (${deckRows().length})`);
+  ok(/loaded and re-priced/.test(savedNote.textContent), "the note says it was re-priced");
+
+  // loaded rows carry live prices, not stored ones
+  {
+    const r = deckRows()[0];
+    const name = r.querySelector(".card").childNodes[0].textContent.trim();
+    const card = all.find((c) => c.n === name);
+    if (card && card.a != null) {
+      ok(cell(r, 3) === money(card.a),
+         `a loaded row is priced from the current snapshot (${cell(r, 3)})`);
+    }
+  }
+
+  // saving the same name again updates rather than duplicating
+  nameBox.value = "Sell pile";
+  click(saveBtn);
+  ok(savedList.querySelectorAll(".deck__deck").length === 1, "re-saving a name updates in place");
+  ok(/updated/i.test(savedNote.textContent), "and says so");
+
+  // a name with markup in it must not break the panel
+  nameBox.value = '<img src=x onerror=1>';
+  click(saveBtn);
+  ok(savedList.querySelectorAll("img").length === 0, "a name containing markup is escaped");
+  ok(savedList.querySelectorAll(".deck__deck").length === 2, "and still saves as a second list");
+
+  // delete
+  click(savedList.querySelector("[data-drop]"));
+  ok(savedList.querySelectorAll(".deck__deck").length === 1, "delete removes one list");
+  click(savedList.querySelector("[data-drop]"));
+  ok(/No saved lists yet/.test(savedList.textContent), "deleting the last one restores the empty state");
+  ok(JSON.parse(win.localStorage.getItem("riftbound.decks.v1")).length === 0,
+     "storage is emptied too");
 }
 
 console.log(fails ? `\n${fails} failing` : "\nall passing");
