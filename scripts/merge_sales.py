@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
 """Merge the catalog last-5-sales pull into the snapshot.
 
-    python3 merge_sales.py sales_pull.txt snapshot.json snapshot.out.json
+    python3 merge_sales.py sales_pull.txt snapshot.json snapshot.out.json [section]
 
 Line format: `id|p,p,p` newest first, shipping included, or `id|` for none.
 
-The feed caps at five sales per product with no paging (offset is ignored), and
-those five are then filtered to Near Mint, English and raw, so a card can end up
-with fewer than five. That is the ceiling, not a partial transfer.
+Anonymously the feed caps at five per product and ignores offset, and those five
+are then filtered to Near Mint, English and raw, so a card can end up with fewer
+than five. Signed in, with `credentials: "include"`, the same endpoint returns 25
+a page and sets nextPage - that is the only way past five.
 """
 
 import json
@@ -48,13 +49,19 @@ def parse(path):
 
 
 def main():
-    if len(sys.argv) != 4:
+    # The section is optional and defaults to catalog, which is where this
+    # started. Signatures and Overnumbered carry the same `c` list, so they
+    # merge through the same path rather than a second near-identical script.
+    if len(sys.argv) not in (4, 5):
         sys.exit(__doc__)
-    pull_path, snap_path, out_path = sys.argv[1:]
+    pull_path, snap_path, out_path = sys.argv[1:4]
+    section = sys.argv[4] if len(sys.argv) == 5 else "catalog"
 
     data, bad = parse(pull_path)
     snap = json.load(open(snap_path))
-    cards = [c for g in snap["catalog"] for c in (g.get("cards") or [])]
+    if section not in snap:
+        sys.exit(f"no section {section!r} in snapshot")
+    cards = [c for g in snap[section] for c in (g.get("cards") or [])]
 
     want = {c["id"] for c in cards}
     missing, extra = want - set(data), set(data) - want
@@ -93,7 +100,7 @@ def main():
         print(f"  note  {len(odd)} cards have a sale far above their ask "
               f"(likely graded or foreign, kept): " +
               "; ".join(f"{n} ask {a} sale {w}" for n, a, w in odd[:3]))
-    print(f"\ncatalog sales: {applied} with sales, {empty} without "
+    print(f"\n{section} sales: {applied} with sales, {empty} without "
           f"({applied + empty} of {len(cards)})")
     json.dump(snap, open(out_path, "w"), indent=2, ensure_ascii=False)
 

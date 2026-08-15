@@ -8,7 +8,7 @@ const { JSDOM } = require("jsdom");
 
 const file = process.argv[2] || path.join(ROOT, "board.html");
 /* how many Playables rows to expect; pass as argv[3] when the catalog grows */
-const CATALOG_ROWS = +(process.argv[3] || 529);
+const CATALOG_ROWS = +(process.argv[3] || 929);
 const errors = [];
 
 const dom = new JSDOM(fs.readFileSync(file, "utf8"), {

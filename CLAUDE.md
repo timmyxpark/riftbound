@@ -34,8 +34,16 @@ All three suites must pass. They exist because of specific bugs that shipped:
 
 ## Data rules that are easy to get wrong
 
-- **English only.** The `language` field lies - sales come back tagged English
-  with titles reading `**CHINESE**`. Match on the seller's title too.
+- **English only, and that applies to asks as much as sales.** The `language`
+  field lies - listings and sales come back tagged English with titles reading
+  `**CHINESE**`, `Chinese Yasuo - Unforgiven` or `Seal of Rage Overnumbered (CN)`.
+  Match on `customData.title` too. This was live in the asks for months: Yasuo,
+  Unforgiven (Overnumbered) asked $50 against a real Near Mint English $81
+  because four cheaper Chinese copies sorted above it, and the cheapest "Origins
+  case" is a Chinese jumbo-pack case at $908 against the English $1,604.99.
+  Match spelled-out language names and CJK anywhere in the title, but only match
+  two-letter codes like `(CN)` when they are set off by brackets or asterisks -
+  a bare `\bit\b` matches the English word "it" and throws away good listings.
 - **Near Mint, raw only.** Grades appear in the sale title, not `listingType`.
 - **Printing.** A product can carry both a Normal and a Foil row. Prefer Normal
   where it exists; it is what the ask column prices and where the volume is.
@@ -67,9 +75,15 @@ file here.
 
 ## Outstanding
 
-- Sales depth uneven: Signatures 45/45 and Overnumbered 92/92 are five-deep,
-  Playables is 323 of 529. The rest need re-pulling after the throttle clears.
-- Playables covers Origins and Spiritforged. **Unleashed (225) and Vendetta
-  (175) are still missing** - ids are already classified in `catalog_ids.json`.
-- Vendetta classifies to 175, against 177 in the original notes. Unexplained;
-  treat 177 as unverified rather than bending the classifier to reach it.
+- **Sales depth is the one thing still gated on being signed in.** Anonymously
+  the sales endpoint answers `totalResults: 5` with an empty `nextPage` no
+  matter what `limit`/`offset` you send, so a card can only ever reach five and
+  usually lands on three or four. Signatures and Overnumbered are five-deep and
+  Playables is 929/929 with sales, but 302 of those carry fewer than five. Only
+  a signed-in pull with `credentials: "include"` can fill them.
+- Playables now covers all four sets: Origins 299, Spiritforged 230,
+  Unleashed 225, Vendetta 175 - **929 cards**.
+- Vendetta is **175**, confirmed. A fresh enumeration classified independently
+  to 175 and matched `catalog_ids.json` id for id, so the 177 in the original
+  notes is simply wrong. Origins is 299: 298 numbered plus the null-numbered
+  token 653117 `Buff`, which was missing from `catalog_ids.json` and is now in it.

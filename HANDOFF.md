@@ -1,7 +1,57 @@
 # Riftbound board - handoff
 
-Updated Aug 14, 2026. The board file next to this doc is working and current.
-The five-element chart renderer is in and tested; what is left is the data pull.
+Updated Aug 15, 2026. The board file next to this doc is working and current.
+The data pull is finished: all four sets are in and every section was repriced.
+
+## Aug 15, 2026 - full re-pull, and the ask bug it fixed
+
+**Every endpoint except deep sales works anonymously.** Listings, weekly history
+and set search all answer a plain HTTPS request with a browser User-Agent and a
+tcgplayer.com Origin/Referer - no session, no browser. That is what made a
+1,066-product re-pull possible in one sitting. About 3,000 requests at roughly
+one every 1.2s produced **zero failures**, so the thousand-request cooldown in
+the notes below appears to be a property of the signed-in session rather than
+of the endpoints themselves. Do not read that as licence to hammer them.
+
+**The asks were priced off Chinese listings.** `language` says English on
+listings just as it lies on sales, and nothing in the ask pull had ever checked
+`customData.title`. Yasuo, Unforgiven (Overnumbered) asked $50 against a real
+Near Mint English $81, with four cheaper Chinese copies sorted above it; Seal of
+Rage asked $42.98 against $63.99, its cheapest listing titled
+`Seal of Rage Overnumbered (CN)`. **Sealed cases had it too** - the cheapest
+"Origins case" is a Chinese jumbo-pack case at $908 against the English
+$1,604.99, and Spiritforged's two cheapest are Chinese slim cases at ~$445
+against $1,151.88. 92 of 137 signature and overnumbered asks changed.
+
+Match language *names* and CJK anywhere in a title, but match two-letter codes
+only when bracketed or asterisked - `(CN)`, `[JP]`, `**CN**`. A bare `\bit\b`
+matches the English word "it". Audited across 95 real seller titles: 84 genuine
+hits, zero false positives.
+
+**How the filter chain was proved rather than trusted.** Every stage was checked
+against data already on the board before anything was written:
+
+| Check | Result |
+|---|---|
+| Sealed-case floors, all four sets | matched stored exactly |
+| Origins case ask | $1,604.99, matched stored to the cent |
+| Case midpoint vs stored `series` | drift 0.00 on all four |
+| Control card weeks / first / last / lo / hi | matched stored exactly |
+| Set classification vs `catalog_ids.json` | id-for-id on all four sets |
+
+**Sales are the one thing still gated.** Anonymously the endpoint returns
+`totalResults: 5` and an empty `nextPage`, and `offset` is ignored - verified.
+Filtering leaves three or four on many cards. Origins, Spiritforged, Signatures
+and Overnumbered already held a full five from a signed-in pull, so overwriting
+would have been a regression: fresh sales now lead and stored ones backfill
+behind them to five. 302 of 929 Playables still carry fewer than five and only a
+signed-in pull can fix that.
+
+**Counts settled.** Vendetta is 175, not the 177 in the old notes - a fresh
+enumeration classified to 175 independently and matched `catalog_ids.json` id
+for id. Origins is 299: 298 numbered plus token 653117 `Buff`, whose number is
+null; `catalog_ids.json` was missing it and now has it. `merge_asks.py` is new.
+`merge_sales.py` takes an optional section argument, defaulting to catalog.
 
 ## What the board has
 
@@ -456,7 +506,8 @@ All must run from inside a loaded TCGplayer page - direct fetching is JS-gated.
     Asks - paged, 50 at a time, sort price+shipping asc
       POST https://mp-search-api.tcgplayer.com/v1/product/{id}/listings?mpfev=5457
 
-    Last 5 sales - hard cap of 5, no paging, no way to get more
+    Last 5 sales - five and no paging ANONYMOUSLY; 25 a page with nextPage when
+    the request carries session cookies (credentials: "include")
       POST https://mpapi.tcgplayer.com/v2/product/{id}/latestsales?mpfev=1
 
     Weekly history - low, high, market, quantity per week, past year
