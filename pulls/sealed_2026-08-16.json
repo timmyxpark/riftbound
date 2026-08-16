@@ -4,7 +4,7 @@
       "set": "Origins",
       "code": "OGN",
       "id": 635368,
-      "ask": 180.0,
+      "ask": 244.78,
       "clears": [
         247.0,
         247.0,
@@ -13,7 +13,9 @@
         242.78
       ],
       "condition": "Unopened",
-      "listings": 66,
+      "listings": 67,
+      "feedAsk": 180.0,
+      "tcgMarket": 243.83,
       "weeks": [
         "2025-08-18",
         "2025-08-25",
@@ -294,7 +296,7 @@
     },
     {
       "set": "Spiritforged",
-      "code": "SPF",
+      "code": "SFD",
       "id": 661934,
       "ask": 190.0,
       "clears": [
@@ -305,6 +307,8 @@
       ],
       "condition": "Unopened",
       "listings": 42,
+      "feedAsk": 190.0,
+      "tcgMarket": 196.47,
       "weeks": [
         "2025-11-03",
         "2025-11-10",
@@ -532,7 +536,7 @@
       "set": "Unleashed",
       "code": "UNL",
       "id": 678150,
-      "ask": 107.56,
+      "ask": 159.4,
       "clears": [
         169.98,
         169.98,
@@ -541,7 +545,9 @@
         169.98
       ],
       "condition": "Unopened",
-      "listings": 22,
+      "listings": 23,
+      "feedAsk": 107.56,
+      "tcgMarket": 155.03,
       "weeks": [
         "2026-02-16",
         "2026-02-23",
@@ -692,9 +698,9 @@
     },
     {
       "set": "Vendetta",
-      "code": "VDT",
+      "code": "VEN",
       "id": 693380,
-      "ask": 135.0,
+      "ask": 142.29,
       "clears": [
         142.29,
         142.29,
@@ -704,6 +710,8 @@
       ],
       "condition": "Unopened",
       "listings": 32,
+      "feedAsk": 135.0,
+      "tcgMarket": 144.6,
       "weeks": [
         "2026-05-25",
         "2026-06-01",
@@ -773,7 +781,7 @@
         140.49,
         147.39,
         135.98,
-        144.71
+        144.6
       ],
       "floor": 113.99,
       "floorRecent": 113.99,
@@ -798,6 +806,8 @@
       ],
       "condition": "Unopened",
       "listings": 25,
+      "feedAsk": 1148.99,
+      "tcgMarket": 1154.67,
       "weeks": [
         "2025-10-27",
         "2025-11-03",
@@ -1035,6 +1045,8 @@
       ],
       "condition": "Unopened",
       "listings": 49,
+      "feedAsk": 529.99,
+      "tcgMarket": 565.82,
       "weeks": [
         "2025-09-29",
         "2025-10-20",
@@ -1281,7 +1293,9 @@
         216.0
       ],
       "condition": "Unopened",
-      "listings": 9,
+      "listings": 10,
+      "feedAsk": 223.75,
+      "tcgMarket": 227.32,
       "weeks": [
         "2026-08-03",
         "2026-08-10"
@@ -1314,15 +1328,17 @@
       "set": "Unleashed Vault Bundle",
       "code": "UVB",
       "id": 678162,
-      "ask": 55.0,
+      "ask": 63.99,
       "clears": [
         63.99,
         63.99,
-        59.0,
-        59.0
+        63.99,
+        63.99
       ],
       "condition": "Unopened",
       "listings": 15,
+      "feedAsk": 55.0,
+      "tcgMarket": 56.9516,
       "weeks": [
         "2026-02-16",
         "2026-02-23",
@@ -1462,20 +1478,20 @@
         43.65,
         47.57,
         52.66,
-        56.03
+        56.95
       ],
       "floor": 32.49,
       "floorRecent": 32.49,
-      "trendPct": 17.0,
-      "rangePct": 36,
-      "volNow": 104,
+      "trendPct": 18.6,
+      "rangePct": 38,
+      "volNow": 106,
       "volPrev": 73
     },
     {
       "set": "Vendetta Vault Bundle",
       "code": "VVB",
       "id": 697970,
-      "ask": 38.88,
+      "ask": 42.99,
       "clears": [
         41.06,
         43.04,
@@ -1483,7 +1499,9 @@
         43.04
       ],
       "condition": "Unopened",
-      "listings": 24,
+      "listings": 25,
+      "feedAsk": 38.88,
+      "tcgMarket": 41.74,
       "weeks": [
         "2026-06-08",
         "2026-06-15",

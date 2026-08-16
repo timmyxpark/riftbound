@@ -278,7 +278,7 @@
     {
       "set": "Spiritforged",
       "code": "SFD",
-      "ask": 1149.99,
+      "ask": 1157.99,
       "clears": [
         1099,
         1152,
@@ -659,7 +659,7 @@
     {
       "set": "Vendetta",
       "code": "VEN",
-      "ask": 881.99,
+      "ask": 909.99,
       "clears": [
         882,
         883,
@@ -669,14 +669,14 @@
       ],
       "floor": 699.99,
       "floorRecent": 699.99,
-      "volNow": 415,
+      "volNow": 416,
       "volPrev": 129,
       "reprint": -1,
       "reprintWhy": "Newest set, initial print still flowing",
       "event": 2,
       "eventWhy": "RQ season live; volume tripled in 4 weeks",
-      "trendPct": 4.6,
-      "rangePct": 82,
+      "trendPct": 4.5,
+      "rangePct": 81,
       "weeks": [
         "2026-06-15",
         "2026-06-22",
@@ -731,7 +731,7 @@
         806.07,
         807.64,
         904.5,
-        868.95
+        868.23
       ]
     },
     {
@@ -24655,7 +24655,7 @@
       "set": "Origins",
       "code": "OGN",
       "id": 635368,
-      "ask": 180.0,
+      "ask": 244.78,
       "clears": [
         247.0,
         247.0,
@@ -25187,7 +25187,7 @@
       "set": "Unleashed",
       "code": "UNL",
       "id": 678150,
-      "ask": 107.56,
+      "ask": 159.4,
       "clears": [
         169.98,
         169.98,
@@ -25351,7 +25351,7 @@
       "set": "Vendetta",
       "code": "VEN",
       "id": 693380,
-      "ask": 135.0,
+      "ask": 142.29,
       "clears": [
         142.29,
         142.29,
@@ -25428,7 +25428,7 @@
         140.49,
         147.39,
         135.98,
-        144.71
+        144.6
       ],
       "floor": 113.99,
       "floorRecent": 113.99,
@@ -25979,12 +25979,12 @@
       "set": "Unleashed Vault Bundle",
       "code": "UVB",
       "id": 678162,
-      "ask": 55.0,
+      "ask": 63.99,
       "clears": [
         63.99,
         63.99,
-        59.0,
-        59.0
+        63.99,
+        63.99
       ],
       "weeks": [
         "2026-02-16",
@@ -26125,13 +26125,13 @@
         43.65,
         47.57,
         52.66,
-        56.03
+        56.95
       ],
       "floor": 32.49,
       "floorRecent": 32.49,
-      "trendPct": 17.0,
-      "rangePct": 36,
-      "volNow": 104,
+      "trendPct": 18.6,
+      "rangePct": 38,
+      "volNow": 106,
       "volPrev": 73,
       "reprint": 0,
       "reprintWhy": "no reprint schedule published for this product",
@@ -26142,7 +26142,7 @@
       "set": "Vendetta Vault Bundle",
       "code": "VVB",
       "id": 697970,
-      "ask": 38.88,
+      "ask": 42.99,
       "clears": [
         41.06,
         43.04,

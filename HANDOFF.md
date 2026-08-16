@@ -322,6 +322,20 @@ $909.99 once a junk listing stopped setting the ask.
 Watch for this whenever a sealed ask looks far under its own floor. That is the
 tell: a $65 ask against a $196 floor was a playmat.
 
+**Better still, do not filter the feed by hand for sealed product.** TCGplayer
+publishes its own aggregate per product in the search row, and
+`lowestPriceWithShipping` is the "from $X" the site advertises - it already
+excludes the mislabelled listings. A $180 "Origins Booster Box Unopened" and a
+$55 Chinese box both sit in the raw feed under the real $244.78, and the title
+filter does not catch the $180 one because nothing in its title is wrong.
+
+Note the trap: **`lowestPrice` is NOT the clean field** - it reports that $55.
+Only `lowestPriceWithShipping` is filtered. So sealed asks include shipping,
+which is 1-5% there and was the entire number on a five-cent card. That is a
+deliberate exception to the card-price basis and the board says so on the tab.
+
+Never use this for singles: the summary knows nothing about Near Mint.
+
 ## Price basis - the card price, with shipping excluded everywhere
 
 **Changed Aug 16, 2026. The board used to include shipping in every price; it no
