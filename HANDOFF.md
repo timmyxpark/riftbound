@@ -303,16 +303,31 @@ Origins is unchanged because its weekly low bottoms at 999.99, just under the
 A ceiling of 6 was chosen by measurement: 7 changes nothing, and 8 lifts Origins
 to 84% but drops Spiritforged to 88% and Unleashed to 83%, for a busier chart.
 
-## Price basis - low/high include shipping, market cannot
+## Price basis - the card price, with shipping excluded everywhere
 
-The history endpoint gives `lowSalePrice` and `lowSalePriceWithShipping`, but only
-one `marketPrice`, with no shipping-inclusive variant.
+**Changed Aug 16, 2026. The board used to include shipping in every price; it no
+longer does.** Ask, sales and the weekly low/high are all `price` /
+`purchasePrice` / `lowSalePrice` / `highSalePrice` - the card alone.
 
-Shipping-inclusive low and high are used, because they match `ask` and the floor
-line already sharing that axis, and they reproduce the stored `series` exactly.
-Market therefore sits about 1% low against the band. Measured across the four
-cases, shipping is 0.74% to 2.15% of price - visible in the numbers, not on the
-chart. Do not "fix" this by mixing bases.
+Why it changed: shipping is a flat ~$1.49 that says nothing about the card, and
+on the sub-dollar half of the catalog it *was* the number. Under the old basis
+**738 of 929 asks landed between $1.40 and $1.75 and not one fell below $1.40**,
+because a 1-cent common shipped is $1.50. Forbidding Waste read as a $1.50 ask
+against a $0.01 card. The old rationale - that shipping-inclusive low/high match
+`ask` and the floor on one axis - was sound on a $1,600 sealed case where
+shipping is 0.74-2.15% of price, and destructive on a 5-cent common.
+
+It also removes a discrepancy the old basis carried. `marketPrice` has no
+shipping-inclusive variant, so the green market line always sat about 1% below
+a shipping-inclusive band drawn around it. All four series now share one basis
+and that gap is gone.
+
+Consequence to know: **sales depth was given up rather than mixed.** Signatures
+and Overnumbered held a full five sales each from a signed-in, shipping-
+inclusive pull. Padding the new card-price column with those would have put two
+bases in one column, so the backfill was removed and those sections carry only
+what an anonymous pull yields. `backfill_sales.py` is deliberately disabled and
+says why; re-enable it only when both sides share a basis.
 
 ## Week filtering, confirmed
 

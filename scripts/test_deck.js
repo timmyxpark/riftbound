@@ -163,11 +163,52 @@ if (opts().length) pick(0);
   });
 }
 
+// --- outlier flag -----------------------------------------------------------
+/* A single freak sale can carry the whole average - Forbidding Waste sold four
+   times near a nickel and once at $19.40. The sale stays in the number, but the
+   row has to say so rather than presenting $7.51 as a plain average. */
+{
+  const odd = all.find((c) => {
+    const v = (c.c || []).slice().sort((a, b) => a - b);
+    if (v.length < 3) return false;
+    const mid = v[Math.floor(v.length / 2)], hi = v[v.length - 1];
+    return mid > 0 && hi >= mid * 8 && hi - mid >= 5;
+  });
+  if (!odd) {
+    console.log("pass  (no card in this snapshot has an outlying sale to flag)");
+  } else {
+    doc.getElementById("deckClear").dispatchEvent(new win.MouseEvent("click", { bubbles: true }));
+    type(odd.n);
+    const i = opts().findIndex((o) => o.querySelector("b").textContent.trim() === odd.n);
+    if (i < 0) {
+      console.log("pass  (outlier card not reachable by name, skipped)");
+    } else {
+      pick(i);
+      const r = deckRows()[0];
+      ok(!!r.querySelector(".deck__odd"), `${odd.n} flags its outlying sale`);
+      ok(/the rest/i.test(cell(r, 4)), `the flag names the ratio (${cell(r, 4)})`);
+      // the sale is flagged, not dropped: the mean still includes it
+      const mean = Math.round((odd.c.reduce((a, b) => a + b, 0) / odd.c.length) * 100) / 100;
+      ok(cell(r, 4).startsWith(money(mean)),
+         "the outlying sale is still counted in the average, not binned");
+    }
+  }
+  // an ordinary card must not be flagged
+  doc.getElementById("deckClear").dispatchEvent(new win.MouseEvent("click", { bubbles: true }));
+  type("yasuo");
+  pick(0);
+  ok(!deckRows()[0].querySelector(".deck__odd"), "an ordinary spread is not flagged");
+  // leave two rows behind: the blocks below act on an existing list
+  type("teemo");
+  if (opts().length) pick(0);
+  ok(deckRows().length === 2, "list restored to two rows for the checks below");
+}
+
 // --- card art -------------------------------------------------------------
 {
   const rs = deckRows();
   const imgs = rs.map((r) => r.querySelector("td.thumb img")).filter(Boolean);
-  ok(imgs.length === rs.length,
+  ok(rs.length > 0 && imgs.length === rs.length,
      `every row shows the card art (${imgs.length}/${rs.length})`);
   ok(imgs.every((im) => /\/product\/\d+_|^data:image/.test(im.getAttribute("src") || "")),
      "each image points at its own product");

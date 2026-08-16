@@ -544,6 +544,12 @@
   .deck__max { color: #33436B; font-weight: 700; }
   /* Marks an ask that was borrowed from the card's own sold average, in the
      same amber the "hold" signal uses - it is a substitution, not a listing. */
+  /* warns that the average includes a freak sale, in the same amber as the
+     borrowed-ask label - both mean "this number needs a second look" */
+  .deck__odd { display: block; font-family: "Inter", system-ui, sans-serif;
+               font-size: 8.5px; font-weight: 700; letter-spacing: 0.04em;
+               text-transform: uppercase; color: var(--butter); margin-top: 2px;
+               white-space: nowrap; cursor: help; }
   .deck__sub { display: block; font-family: "Inter", system-ui, sans-serif;
                font-size: 8.5px; font-weight: 700; letter-spacing: 0.06em;
                text-transform: uppercase; color: var(--butter); margin-top: 2px; }
@@ -783,7 +789,7 @@
   <section id="p-cat" class="tabpanel">
     <div class="sig">
       <div class="sig__title">Playables</div>
-      <div class="sig__sub">Every card in the set, down to three cents. Ask is the cheapest Near Mint English copy listed, shipping included; cards with nothing listed show as none. Charts plot weekly sold prices over the past year.</div>
+      <div class="sig__sub">Every card in the set, down to a cent. Ask is the cheapest Near Mint English copy listed, card price only - shipping is a flat charge that says nothing about the card, and on a five-cent common it was the whole number. Cards with nothing listed show as none. Charts plot weekly sold prices over the past year.</div>
       <div class="ckey"></div>
       <div class="panel">
         <div class="scroll">
@@ -802,7 +808,7 @@
   <section id="p-deck" class="tabpanel">
     <div class="sig">
       <div class="sig__title">Deck Pricer</div>
-      <div class="sig__sub">Build a list and price it three ways at once. <b>Asking</b> is the cheapest Near Mint English copy listed, shipping included - what you would have to undercut to sell; a card with nothing listed borrows its own sold average instead of counting as zero, and the cell says so. <b>Avg Last 5 Sold</b> is the mean of that card's last five real sales - closer to what it actually moves for. <b>Max(Ask, Sold)</b> takes whichever is higher for each card and totals those.</div>
+      <div class="sig__sub">Build a list and price it three ways at once. <b>Asking</b> is the cheapest Near Mint English copy listed, card price only, no shipping - what you would have to undercut to sell; a card with nothing listed borrows its own sold average instead of counting as zero, and the cell says so. <b>Avg Last 5 Sold</b> is the mean of that card's last five real sales - closer to what it actually moves for. <b>Max(Ask, Sold)</b> takes whichever is higher for each card and totals those.</div>
 
       <div class="deck__add">
         <div class="deck__box">
@@ -1808,6 +1814,22 @@ function avgSolds(c) {
   return Math.round((s / c.length) * 100) / 100;
 }
 
+/* One freak sale can carry the whole average: Forbidding Waste sold four times
+   near a nickel and once at $19.40, which put its "average" at $7.51. Those
+   sales are real, so they stay in the number rather than being quietly binned -
+   but the row says the average is resting on something odd. Compared against
+   the median, not the mean, so the outlier cannot hide itself in its own
+   reference point, and an absolute gap is required so penny noise on a bulk
+   common does not trip it. */
+function saleOutlier(c) {
+  if (!c || c.length < 3) return null;
+  var s = c.slice().sort(function (a, b) { return a - b; });
+  var mid = s[Math.floor(s.length / 2)];
+  var hi = s[s.length - 1];
+  if (!(mid > 0) || hi < mid * 8 || hi - mid < 5) return null;
+  return { hi: hi, times: Math.round(hi / mid) };
+}
+
 /* One flat index over every priced product. Names repeat across sections -
    "Yasuo, Unforgiven" is a Playable, an Overnumber and a Signature at three
    very different prices - so each entry carries its section and set, and the
@@ -1819,7 +1841,8 @@ function buildDeckIndex() {
       (g.cards || []).forEach(function (c) {
         out.push({ id: c.id, n: c.n, set: g.set, section: label,
                    a: (c.a == null ? null : c.a), avg: avgSolds(c.c),
-                   nSales: (c.c || []).length, fold: foldName(c.n) });
+                   nSales: (c.c || []).length, odd: saleOutlier(c.c),
+                   fold: foldName(c.n) });
       });
     });
   };
@@ -1971,7 +1994,11 @@ var deckRows = [];
         '<td class="n">' + (e.avg == null
             ? '<span class="dim">no sales</span>'
             : money(e.avg) + (e.nSales < 5
-                ? '<span class="dim"> of ' + e.nSales + '</span>' : '')) + '</td>' +
+                ? '<span class="dim"> of ' + e.nSales + '</span>' : '') +
+              (e.odd ? '<span class="deck__odd" title="One sale of ' + money(e.odd.hi) +
+                       ' sits about ' + e.odd.times + ' times the rest, and is included ' +
+                       'in this average">! one sale ' + e.odd.times + '× the rest</span>' : ''))
+          + '</td>' +
         '<td class="n big"></td>' +
         '<td class="n big"></td>' +
         '<td class="n big deck__max"></td>' +

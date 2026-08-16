@@ -52,6 +52,10 @@ All four suites must pass. They exist because of specific bugs that shipped:
   where it exists; it is what the ask column prices and where the volume is.
 - **Market price is a trailing average** and legitimately sits outside a given
   week's low-to-high range on thin cards. That is signal, not corruption.
+- **Prices exclude shipping.** Ask, sales and the weekly low/high are all the
+  card price alone. Shipping is a flat ~$1.49; including it used to pin 738 of
+  929 asks between $1.40 and $1.75 with none below $1.40, because a 1-cent
+  common shipped is $1.50. Never mix the two bases in one column - see HANDOFF.
 - **Sales need `credentials: "include"`.** Being logged in is not enough; without
   cookies the API returns five sales and `totalResults: 5`.
 
