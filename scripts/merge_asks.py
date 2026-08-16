@@ -59,10 +59,18 @@ def parse(path):
 
 
 def main():
-    if len(sys.argv) != 4:
+    # `--expect-mass-change` is for the rare run that changes what a price MEANS
+    # rather than what it is - the Aug 16 2026 move from card+shipping to card
+    # alone shifted 91% of asks and tripped the guard correctly. It is opt-in so
+    # an ordinary pull still gets caught; do not make it the default.
+    if len(sys.argv) not in (4, 5):
         print(__doc__)
         return 2
     pull_path, snap_path, out_path = sys.argv[1:4]
+    expect_mass = len(sys.argv) == 5 and sys.argv[4] == "--expect-mass-change"
+    if len(sys.argv) == 5 and not expect_mass:
+        print(f"unknown option {sys.argv[4]!r}")
+        return 2
 
     asks, bad = parse(pull_path)
     snap = json.load(open(snap_path))
@@ -99,10 +107,15 @@ def main():
         c["a"] = ask
 
     share = changed / len(asks) if asks else 0
-    if share > MAX_CHANGED_SHARE:
+    if share > MAX_CHANGED_SHARE and not expect_mass:
         print(f"REFUSING TO WRITE: {changed} of {len(asks)} asks changed "
               f"({share:.0%}), above the {MAX_CHANGED_SHARE:.0%} guard")
+        print("  If the basis of the price itself changed, re-run with "
+              "--expect-mass-change after checking the moves are real.")
         return 1
+    if share > MAX_CHANGED_SHARE:
+        print(f"  note  {changed} of {len(asks)} asks changed ({share:.0%}); "
+              f"guard waived by --expect-mass-change")
 
     moves.sort(reverse=True)
     print(f"  pulled   {len(asks)} asks")
