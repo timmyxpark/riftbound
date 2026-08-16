@@ -303,6 +303,25 @@ Origins is unchanged because its weekly low bottoms at 999.99, just under the
 A ceiling of 6 was chosen by measurement: 7 changes nothing, and 8 lifts Origins
 to 84% but drops Spiritforged to 88% and Unleashed to 83%, for a busier chart.
 
+## Sealed product carries its own contamination
+
+Sellers list a different item under a sealed product's id and still tick
+"Unopened", so condition alone cannot see it. Real examples, all found while
+adding the boxes table: a **"Vendetta sleeve blister pack" at $12** under the
+$135 booster box, an **"*Opened booster box*, only gold rarities were pulled"
+at $60**, **"Sealed 36 Basic Runes" at $5.50** under a Vault Bundle, a
+**"Vendetta Vault Promo Pack" at $12**, and a **"Riftbound Worlds Playmat" at
+$65** under a bundle whose real listings start at $1,148.99.
+
+`NOT_SEALED` in the pull library rejects them on the seller title: opened
+(but not "unopened"/"never opened"/"not opened"), blister, sleeves, basic runes,
+tokens, promo pack, playmat, deckbox, proxy, repack, resealed, empty, box only,
+"set/pack/lot of N". It fixed the sealed CASES too - Vendetta went $881.99 to
+$909.99 once a junk listing stopped setting the ask.
+
+Watch for this whenever a sealed ask looks far under its own floor. That is the
+tell: a $65 ask against a $196 floor was a playmat.
+
 ## Price basis - the card price, with shipping excluded everywhere
 
 **Changed Aug 16, 2026. The board used to include shipping in every price; it no

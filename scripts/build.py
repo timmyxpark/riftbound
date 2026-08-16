@@ -19,6 +19,8 @@ EXPECT = {
     "overnumbered": 92,
     # Origins was 297 in the original pull; that count was wrong - see HANDOFF.
     "catalog": {"Origins": 299, "Spiritforged": 230, "Unleashed": 225, "Vendetta": 175},
+    "boxes": 4,              # one booster display per released set
+    "sealed": 5,             # standalone bundles and box sets
 }
 
 
@@ -53,31 +55,43 @@ def check(snap):
         if n != EXPECT[key]:
             errs.append(f"{key}: {n} cards, expected {EXPECT[key]}")
 
-    # Sealed cases: series, weeks and the three band series must all line up, or
-    # the chart silently drops back to a bare midpoint line.
-    banded_sets = 0
-    for s in snap.get("sets") or []:
-        name = s.get("set")
+    # Sealed cases, boxes and the standalone products all render through the
+    # same row renderer, so they all get the same integrity check: series,
+    # weeks and the three band series must line up or the chart silently drops
+    # back to a bare midpoint line.
+    def check_band(label, s, errs):
+        """True when this record carries a usable low/high/market band."""
         series, weeks = s.get("series") or [], s.get("weeks") or []
         if series and weeks and len(series) != len(weeks):
-            errs.append(f"sets/{name}: {len(series)} points against {len(weeks)} weeks")
+            errs.append(f"{label}: {len(series)} points against {len(weeks)} weeks")
+            return False
         trio = [s.get("low"), s.get("high"), s.get("market")]
-        if any(t is not None for t in trio):
-            if any(t is None for t in trio):
-                errs.append(f"sets/{name}: partial low/high/market")
-            elif len({len(t) for t in trio} | {len(series)}) != 1:
-                errs.append(f"sets/{name}: low/high/market do not match series length")
-            elif any(lo > hi for lo, hi in zip(s["low"], s["high"])):
-                errs.append(f"sets/{name}: weekly low above high")
-            elif any(m <= 0 for m in s["market"]):
-                errs.append(f"sets/{name}: non-positive market price")
+        if not any(t is not None for t in trio):
+            return False
+        if any(t is None for t in trio):
+            errs.append(f"{label}: partial low/high/market")
+        elif len({len(t) for t in trio} | {len(series)}) != 1:
+            errs.append(f"{label}: low/high/market do not match series length")
+        elif any(lo > hi for lo, hi in zip(s["low"], s["high"])):
+            errs.append(f"{label}: weekly low above high")
+        elif any(m <= 0 for m in s["market"]):
+            errs.append(f"{label}: non-positive market price")
+        else:
+            drift = max(abs(round((lo + hi) / 2, 2) - m)
+                        for lo, hi, m in zip(s["low"], s["high"], series))
+            if drift > 0.51:
+                errs.append(f"{label}: series is not the midpoint of low/high (off by {drift:.2f})")
             else:
-                banded_sets += 1
-                drift = max(abs(round((lo + hi) / 2, 2) - m)
-                            for lo, hi, m in zip(s["low"], s["high"], series))
-                if drift > 0.51:
-                    errs.append(f"sets/{name}: series is not the midpoint of low/high (off by {drift:.2f})")
-    warns.append(f"sets: {banded_sets}/{len(snap.get('sets') or [])} have low/high/market history")
+                return True
+        return False
+
+    for key in ("sets", "boxes", "sealed"):
+        recs = snap.get(key) or []
+        if key != "sets":
+            if len(recs) != EXPECT[key]:
+                errs.append(f"{key}: {len(recs)}, expected {EXPECT[key]}")
+        banded = sum(1 for s in recs if check_band(f"{key}/{s.get('set')}", s, errs))
+        warns.append(f"{key}: {banded}/{len(recs)} have low/high/market history")
 
     # Catalog is checked per set, since it lands one set at a time.
     for g in snap.get("catalog") or []:

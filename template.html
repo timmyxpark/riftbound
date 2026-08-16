@@ -650,7 +650,7 @@
   <h1>Riftbound Pricing Update</h1>
   <div class="when" id="when"></div>
   <nav class="tabs" id="tabs" role="tablist">
-    <button class="tab is-on" role="tab" aria-selected="true" data-panel="p-cases">Sealed Cases</button>
+    <button class="tab is-on" role="tab" aria-selected="true" data-panel="p-cases">Sealed</button>
     <button class="tab" role="tab" aria-selected="false" data-panel="p-sig">Signature Overnumbers</button>
     <button class="tab" role="tab" aria-selected="false" data-panel="p-over">Overnumbered</button>
     <button class="tab" role="tab" aria-selected="false" data-panel="p-cat">Playables</button>
@@ -720,6 +720,42 @@
     </div>
   </div>
   <div class="ckey"></div>
+
+  <div class="sig">
+    <div class="sig__title">Booster Boxes</div>
+    <div class="sig__sub">The display box each case is built from. Priced the same way as the cases - cheapest Unopened English listing, card price only. A case runs six to eleven boxes depending on the set, so the two tables should track each other.</div>
+    <div class="panel">
+      <div class="scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>Set</th><th>Ask now</th><th>Last 5 sales</th>
+              <th>Floor</th><th>Signal</th><th>Market Price vs. High/Low Range</th>
+            </tr>
+          </thead>
+          <tbody id="boxbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="sig">
+    <div class="sig__title">Other Sealed Products</div>
+    <div class="sig__sub">Bundles and box sets that do not belong to a booster set, so the set chips above do not narrow this table. Their <b>RPT</b> and <b>EVT</b> chips read neutral: Riot publishes no reprint schedule for these and they sit outside the competitive calendar, so those two factors are left unscored rather than guessed, and the signal rests on value against the floor and momentum alone.</div>
+    <div class="panel">
+      <div class="scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>Product</th><th>Ask now</th><th>Last 5 sales</th>
+              <th>Floor</th><th>Signal</th><th>Market Price vs. High/Low Range</th>
+            </tr>
+          </thead>
+          <tbody id="sealedbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
 
   <div class="legend">
     <div class="legend__title">What the signals mean</div>
@@ -1435,62 +1471,89 @@ function chart(series, weeks, floor, ask, idx, tickCount, small, band) {
     '</svg>' + (hasFloor ? '<div class="cap">dashed line = floor</div>' : '');
 }
 
-function render(snap, sets) {
-  var body = document.getElementById("body");
-  body.innerHTML = "";
-
-  snap.sets.filter(function (s) { return !sets || sets.indexOf(s.set) > -1; }).forEach(function (s, idx) {
-    var tr = document.createElement("tr");
-
-    if (s.soon) {
-      tr.className = "soon";
-      tr.innerHTML = '<td class="set">' + s.set + '<span>' + s.code + '</span></td>' +
+/* One row of a sealed table. Cases, boxes and the standalone products are the
+   same shape - ask, last five sales, floor, signal, chart - so they share one
+   renderer instead of three that would drift apart. */
+function sealedRow(s, idx) {
+  if (s.soon) {
+    return { cls: "soon",
+      html: '<td class="set">' + s.set + '<span>' + (s.code || "") + '</span></td>' +
         '<td class="ask">-</td><td class="sales">-</td><td class="floorc">-</td>' +
-        '<td>' + s.soon + '</td><td class="trend">-</td>';
+        '<td>' + s.soon + '</td><td class="trend">-</td>' };
+  }
+
+  var c = composite(s);
+  var multCls = !c.mult ? "" : c.mult >= 1.45 ? "hi" : c.mult <= 1.15 ? "lo" : "";
+
+  var sales = (s.clears || []).length
+    ? s.clears.map(function (v, i) {
+        return '<div class="' + (i === 0 ? "top" : "") + '">' + whole(v) + '</div>';
+      }).join("")
+    : '<div class="dim">none</div>';
+
+  /* floor cell: the anchor, plus the 26-week floor when it has drifted away
+     from it, which is how you spot the market re-basing upward */
+  var rebased = s.floorRecent && s.floor && (s.floorRecent / s.floor) >= 1.15;
+  var thin = (s.weekCount || 0) < THIN_WEEKS;
+  var floorNote = whole(s.floor) +
+    (rebased ? ' &middot; 26wk ' + whole(s.floorRecent) : '') +
+    (thin ? ' &middot; ' + s.weekCount + 'wk only' : '');
+  var floorCell = c.mult
+    ? '<b class="' + multCls + '">' + c.mult.toFixed(2) + 'x</b><span>' + floorNote + '</span>'
+    : '<b>-</b><span>not set</span>';
+
+  var chips = !c.f ? "" :
+    '<i class="' + chipClass(c.f.value) + '" title="Value vs floor: ' + c.mult.toFixed(2) + 'x">VAL</i>' +
+    '<i class="' + chipClass(c.f.momentum) + '" title="Momentum: ' + (s.trendPct >= 0 ? '+' : '') + s.trendPct + '% vs its 8-week average, ' +
+      s.rangePct + '% of 52-week range, volume ' + s.volNow + ' vs ' + s.volPrev + ' the prior 4 weeks">MOM</i>' +
+    '<i class="' + chipClass(c.f.reprint) + '" title="Reprint risk: ' + s.reprintWhy + '">RPT</i>' +
+    '<i class="' + chipClass(c.f.event) + '" title="Event demand: ' + s.eventWhy + '">EVT</i>';
+
+  return { cls: "", html:
+    '<td class="set">' + s.set + '<span>' + (s.code || "") + '</span></td>' +
+    '<td class="ask">' + (s.ask == null ? '<span class="dim">none listed</span>' : money(s.ask)) + '</td>' +
+    '<td class="sales">' + sales + '</td>' +
+    '<td class="floorc">' + floorCell + '</td>' +
+    '<td class="sig"><span class="tag ' + c.tone + '">' + c.label + '</span>' +
+      (c.total === null ? '' : '<span class="score">' + (c.total >= 0 ? "+" : "") + c.total.toFixed(2) + '</span>') +
+      (chips ? '<div class="fac">' + chips + '</div>' : '<span class="why">' + c.why + '</span>') + '</td>' +
+    '<td class="trend">' + chart(s.series, s.weeks, s.floor, s.ask, idx, null, false,
+        (s.low && s.high && s.market &&
+         s.low.length === s.series.length && s.high.length === s.series.length &&
+         s.market.length === s.series.length)
+          ? { lo: s.low, hi: s.high, mkt: s.market } : null) + '</td>' };
+}
+
+/* `sets` filters by set name; pass null for a table whose rows are not one per
+   set, like the standalone products. */
+function renderSealedTable(records, targetId, sets) {
+  var body = document.getElementById(targetId);
+  if (!body) return;
+  body.innerHTML = "";
+  /* Counted while appending rather than read back off the node: the chart test
+     exercises this code against a stubbed DOM that has no `children`. */
+  var shown = 0;
+  (records || [])
+    .filter(function (s) { return !sets || sets.indexOf(s.set) > -1; })
+    .forEach(function (s, idx) {
+      var r = sealedRow(s, idx);
+      var tr = document.createElement("tr");
+      if (r.cls) tr.className = r.cls;
+      tr.innerHTML = r.html;
       body.appendChild(tr);
-      return;
-    }
+      shown++;
+    });
+  if (!shown) {
+    body.innerHTML = '<tr><td colspan="6" class="emptynote">Nothing for the selected sets.</td></tr>';
+  }
+}
 
-    var c = composite(s);
-    var multCls = !c.mult ? "" : c.mult >= 1.45 ? "hi" : c.mult <= 1.15 ? "lo" : "";
-
-    var sales = s.clears.map(function (v, i) {
-      return '<div class="' + (i === 0 ? "top" : "") + '">' + whole(v) + '</div>';
-    }).join("");
-
-    /* floor cell: the anchor, plus the 26-week floor when it has drifted away
-       from it, which is how you spot the market re-basing upward */
-    var rebased = s.floorRecent && s.floor && (s.floorRecent / s.floor) >= 1.15;
-    var thin = (s.weekCount || 0) < THIN_WEEKS;
-    var floorNote = whole(s.floor) +
-      (rebased ? ' &middot; 26wk ' + whole(s.floorRecent) : '') +
-      (thin ? ' &middot; ' + s.weekCount + 'wk only' : '');
-    var floorCell = c.mult
-      ? '<b class="' + multCls + '">' + c.mult.toFixed(2) + 'x</b><span>' + floorNote + '</span>'
-      : '<b>-</b><span>not set</span>';
-
-    var chips = !c.f ? "" :
-      '<i class="' + chipClass(c.f.value) + '" title="Value vs floor: ' + c.mult.toFixed(2) + 'x">VAL</i>' +
-      '<i class="' + chipClass(c.f.momentum) + '" title="Momentum: ' + (s.trendPct >= 0 ? '+' : '') + s.trendPct + '% vs its 8-week average, ' +
-        s.rangePct + '% of 52-week range, volume ' + s.volNow + ' vs ' + s.volPrev + ' the prior 4 weeks">MOM</i>' +
-      '<i class="' + chipClass(c.f.reprint) + '" title="Reprint risk: ' + s.reprintWhy + '">RPT</i>' +
-      '<i class="' + chipClass(c.f.event) + '" title="Event demand: ' + s.eventWhy + '">EVT</i>';
-
-    tr.innerHTML =
-      '<td class="set">' + s.set + '<span>' + s.code + '</span></td>' +
-      '<td class="ask">' + money(s.ask) + '</td>' +
-      '<td class="sales">' + sales + '</td>' +
-      '<td class="floorc">' + floorCell + '</td>' +
-      '<td class="sig"><span class="tag ' + c.tone + '">' + c.label + '</span>' +
-        (c.total === null ? '' : '<span class="score">' + (c.total >= 0 ? "+" : "") + c.total.toFixed(2) + '</span>') +
-        (chips ? '<div class="fac">' + chips + '</div>' : '<span class="why">' + c.why + '</span>') + '</td>' +
-      '<td class="trend">' + chart(s.series, s.weeks, s.floor, s.ask, idx, null, false,
-          (s.low && s.high && s.market &&
-           s.low.length === s.series.length && s.high.length === s.series.length &&
-           s.market.length === s.series.length)
-            ? { lo: s.low, hi: s.high, mkt: s.market } : null) + '</td>';
-    body.appendChild(tr);
-  });
+function render(snap, sets) {
+  renderSealedTable(snap.sets, "body", sets);
+  renderSealedTable(snap.boxes, "boxbody", sets);
+  /* The standalone products are not one-per-set - a Worlds bundle belongs to no
+     set - so the set chips do not narrow this table. */
+  renderSealedTable(snap.sealed, "sealedbody", null);
 
   document.getElementById("when").textContent = "Prices updated as of " + (snap.pulledLabel || snap.pulled);
 

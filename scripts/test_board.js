@@ -27,6 +27,37 @@ ok(errors.length === 0, "no script errors" + (errors.length ? ": " + errors[0] :
 const rows = (id) => doc.querySelectorAll("#" + id + " tr:not(.setrow):not(.soon)").length;
 
 ok(doc.querySelectorAll("#body tr").length >= 4, `case table has ${doc.querySelectorAll("#body tr").length} rows`);
+/* The Sealed tab carries three tables now: cases, the boxes each case is built
+   from, and the standalone products. They share one row renderer, so a break in
+   one is a break in all three. */
+ok(rows("boxbody") === 4, `box table has ${rows("boxbody")} rows (expect 4)`);
+ok(rows("sealedbody") === 5, `other-sealed table has ${rows("sealedbody")} rows (expect 5)`);
+{
+  const tabs = [...doc.querySelectorAll(".tab")].map((t) => t.textContent.trim());
+  ok(tabs[0] === "Sealed", `first tab is "Sealed" (${tabs[0]})`);
+}
+{
+  // every sealed row must price something - a blank ask column would mean the
+  // Unopened filter matched nothing
+  const asks = [...doc.querySelectorAll("#boxbody .ask, #sealedbody .ask")]
+    .map((td) => td.textContent.trim());
+  ok(asks.length === 9 && asks.every((a) => /^\$[\d,]/.test(a)),
+     `all 9 box/sealed rows show a price (${asks.filter((a) => /^\$/.test(a)).length}/9)`);
+  // and a box must cost less than its own case, or the two are mixed up
+  const caseAsk = (name) => {
+    const tr = [...doc.querySelectorAll("#body tr")]
+      .find((r) => (r.querySelector(".set") || {}).textContent?.startsWith(name));
+    return tr ? parseFloat(tr.querySelector(".ask").textContent.replace(/[^0-9.]/g, "")) : null;
+  };
+  const boxAsk = (name) => {
+    const tr = [...doc.querySelectorAll("#boxbody tr")]
+      .find((r) => (r.querySelector(".set") || {}).textContent?.startsWith(name));
+    return tr ? parseFloat(tr.querySelector(".ask").textContent.replace(/[^0-9.]/g, "")) : null;
+  };
+  const bad = ["Origins", "Spiritforged", "Unleashed", "Vendetta"]
+    .filter((n) => !(boxAsk(n) > 0 && caseAsk(n) > 0 && boxAsk(n) < caseAsk(n)));
+  ok(bad.length === 0, `every box asks less than its case${bad.length ? ": " + bad.join(", ") : ""}`);
+}
 ok(rows("sigbody") === 45, `signatures table has ${rows("sigbody")} card rows (expect 45)`);
 ok(rows("overbody") === 92, `overnumbered table has ${rows("overbody")} card rows (expect 92)`);
 /* the catalog grows as sets land; read the expectation from the snapshot the
