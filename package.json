@@ -7,7 +7,11 @@
     "build": "python3 scripts/build.py snapshot.json template.html board.html",
     "test": "node scripts/test_chart.js && node scripts/test_board.js board.html && node scripts/test_filter.js board.html && node scripts/test_deck.js board.html",
     "standalone": "python3 scripts/standalone.py board.html board.standalone.html",
-    "all": "npm run build && npm test && npm run standalone"
+    "all": "npm run build && npm test && npm run standalone",
+    "refresh": "bash scripts/refresh.sh",
+    "whatmoved": "python3 scripts/whatmoved.py"
   },
-  "dependencies": { "jsdom": "^24.0.0" }
+  "dependencies": {
+    "jsdom": "^24.0.0"
+  }
 }

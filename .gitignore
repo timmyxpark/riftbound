@@ -2,3 +2,4 @@ node_modules/
 board.html
 board.standalone.html
 *.zip
+.pullcache/
