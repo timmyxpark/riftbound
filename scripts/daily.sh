@@ -47,7 +47,19 @@ if echo "$MOVED" | grep -q "WARNING: almost every ask changed"; then
   exit 1
 fi
 
-# ---- 3. commit -------------------------------------------------------------
+# ---- 3. refresh the published page ----------------------------------------
+# docs/index.html is what GitHub Pages serves. It is a copy of the standalone
+# board, committed alongside the data so the site and the snapshot never drift.
+echo "--- published page ---"
+if [ -f board.standalone.html ]; then
+  mkdir -p docs
+  cp board.standalone.html docs/index.html
+  echo "  docs/index.html refreshed ($(wc -c < docs/index.html) bytes)"
+else
+  echo "  board.standalone.html missing - page not refreshed"
+fi
+
+# ---- 3b. commit -------------------------------------------------------------
 echo "--- commit ---"
 if [ -n "$(git status --porcelain)" ]; then
   git add -A
@@ -67,12 +79,9 @@ fi
 #
 # board.standalone.html is produced by `npm run all` during the refresh and is
 # a complete page on its own - it can be opened directly or hosted anywhere.
-echo "--- shareable file ---"
-if [ -f board.standalone.html ]; then
-  echo "  board.standalone.html rebuilt ($(wc -c < board.standalone.html) bytes)"
-  echo "  to update the Claude artifact, ask Claude: \"publish the board\""
-else
-  echo "  board.standalone.html missing - the build did not complete"
-fi
+echo "--- where it lands ---"
+echo "  https://timmyxpark.github.io/riftbound/  (updates from this push, no human step)"
+echo "  the Claude artifact is separate: ask Claude \"publish the board\" to update it,"
+echo "  since the Artifact tool is not available to headless sessions."
 
 echo "--- done $(date '+%H:%M:%S') ---"
