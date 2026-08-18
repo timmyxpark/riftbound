@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Daily Riftbound price refresh at 05:00 local time.
+
+  Install:
+    cp scripts/com.riftbound.refresh.plist ~/Library/LaunchAgents/
+    launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.riftbound.refresh.plist
+
+  Check / run now / remove:
+    launchctl print gui/$(id -u)/com.riftbound.refresh
+    launchctl kickstart -k gui/$(id -u)/com.riftbound.refresh
+    launchctl bootout gui/$(id -u)/com.riftbound.refresh
+
+  If the Mac is asleep at 05:00 launchd runs the job when it next wakes, so a
+  closed lid delays the refresh rather than skipping the day.
+-->
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.riftbound.refresh</string>
+
+  <key>ProgramArguments</key>
+  <array>
+    <string>/bin/bash</string>
+    <string>/Users/timothypark/Desktop/riftbound/scripts/daily.sh</string>
+  </array>
+
+  <key>WorkingDirectory</key>
+  <string>/Users/timothypark/Desktop/riftbound</string>
+
+  <key>StartCalendarInterval</key>
+  <dict>
+    <key>Hour</key><integer>5</integer>
+    <key>Minute</key><integer>0</integer>
+  </dict>
+
+  <!-- The script does its own logging; these catch anything that escapes it,
+       such as an interpreter failing before the script can redirect. -->
+  <key>StandardOutPath</key>
+  <string>/Users/timothypark/Desktop/riftbound/logs/launchd.out.log</string>
+  <key>StandardErrorPath</key>
+  <string>/Users/timothypark/Desktop/riftbound/logs/launchd.err.log</string>
+
+  <!-- Never on load: a ~2 hour pull should not start just because the machine
+       rebooted or the agent was reinstalled. -->
+  <key>RunAtLoad</key>
+  <false/>
+
+  <key>ProcessType</key>
+  <string>Background</string>
+</dict>
+</plist>

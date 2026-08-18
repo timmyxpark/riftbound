@@ -24,7 +24,11 @@ from PIL import Image
 HERE = WORK
 REPO = ROOT
 SRC   = os.path.join(REPO, "board.standalone.html")
-FONTS = os.path.join(HERE, "fonts_inline.css")
+# Committed to the repo so a refresh never depends on Google Fonts being
+# reachable; falls back to a locally generated copy if one exists.
+FONTS = os.path.join(REPO, "assets", "fonts_inline.css")
+if not os.path.exists(FONTS):
+    FONTS = os.path.join(HERE, "fonts_inline.css")
 CACHE = os.path.join(HERE, "imgcache")
 OUT   = os.path.join(HERE, "riftbound-board.html")
 

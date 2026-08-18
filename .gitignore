@@ -3,3 +3,5 @@ board.html
 board.standalone.html
 *.zip
 .pullcache/
+.venv/
+logs/
