@@ -1,4 +1,4 @@
-/* Drives the Deck Pricer in jsdom: types a name, picks from the suggestions,
+/* Drives the Trade Calculator in jsdom: types a name, picks from the suggestions,
    changes quantities and checks both totals against the snapshot the board was
    built from. The two totals answer different questions, so the test checks
    they are computed from different fields and never quietly share a number. */
@@ -37,8 +37,8 @@ const foot = doc.getElementById("deckfoot");
 ok(!!box && !!sug && !!body && !!foot, "deck pricer markup is present");
 
 const tab = [...doc.querySelectorAll(".tab")]
-  .find((t) => t.textContent.trim() === "Deck Pricer");
-ok(!!tab, "Deck Pricer tab exists");
+  .find((t) => t.textContent.trim() === "Trade Calculator");
+ok(!!tab, "Trade Calculator tab exists");
 tab.dispatchEvent(new win.Event("click", { bubbles: true }));
 ok(doc.getElementById("p-deck").classList.contains("is-on"), "its panel opens");
 ok(doc.getElementById("setfilter").style.display === "none",
@@ -55,6 +55,12 @@ const type = (s) => {
 const opts = () => [...sug.querySelectorAll(".deck__opt")];
 const deckRows = () => [...body.querySelectorAll("tr")].filter((r) => !r.querySelector("td[colspan]"));
 const cell = (r, i) => r.querySelectorAll("td")[i].textContent.trim();
+/* The ask and sold cells carry a fold-out list under the headline, so the
+   cell's text is the headline followed by every price beneath it. */
+const headline = (r, i) => {
+  const el = r.querySelectorAll("td")[i].querySelector(".deck__now");
+  return el ? el.textContent.trim() : cell(r, i);
+};
 const pick = (i) => {
   const o = opts()[i];
   o.dispatchEvent(new win.MouseEvent("mousedown", { bubbles: true }));
@@ -101,7 +107,7 @@ for (const key of ["signatures", "overnumbered", "catalog"]) {
   const card = all.find((c) => c.n === name && c.a != null);
   ok(!!card, `row card ${name} found in the snapshot`);
   const mean = Math.round((card.c.reduce((a, b) => a + b, 0) / card.c.length) * 100) / 100;
-  ok(cell(row, 3) === money(card.a), `ask each is the card's ask (${cell(row, 3)})`);
+  ok(headline(row, 3) === money(card.a), `ask each is the card's ask (${headline(row, 3)})`);
   ok(cell(row, 4).startsWith(money(mean)),
      `avg last 5 is the mean of its ${card.c.length} sales (${money(mean)})`);
   ok(cell(row, 5) === money(card.a), "ask total at qty 1 equals ask each");
@@ -140,27 +146,121 @@ if (opts().length) pick(0);
     return t + (v ? parseFloat(v) : 0);
   }, 0);
   const totals = foot.querySelectorAll(".deck__tot");
-  ok(totals.length === 4, `ask, sold, max and comp totals are shown (${totals.length})`);
+  ok(totals.length === 3, `ask, sold and comp totals are shown (${totals.length})`);
   const askTot = parseFloat(totals[0].textContent.replace(/[^0-9.]/g, ""));
   const soldTot = parseFloat(totals[1].textContent.replace(/[^0-9.]/g, ""));
   ok(Math.abs(askTot - sum(5)) < 0.02, `ask total sums the ask column (${money(askTot)})`);
   ok(Math.abs(soldTot - sum(6)) < 0.02, `sold total sums the sold column (${money(soldTot)})`);
   ok(askTot !== soldTot, "the two totals are genuinely separate numbers");
 
-  /* Max is per row, then summed - not the larger of the two grand totals. On a
-     mixed list some cards ask high and some sold high, so the column total has
-     to be at least both and can exceed either. */
-  const maxTot = parseFloat(totals[2].textContent.replace(/[^0-9.]/g, ""));
-  ok(Math.abs(maxTot - sum(7)) < 0.02, `max total sums the max column (${money(maxTot)})`);
-  ok(maxTot >= askTot - 0.02 && maxTot >= soldTot - 0.02,
-     "max total is at least as large as both other totals");
+  /* Max lost its own column but not its meaning: it is the default comp basis,
+     so Value carries it. Still per row then summed, never the larger of the two
+     grand totals - on a mixed list some cards ask high and some sold high, so
+     the comped total has to be at least both and can exceed either. */
+  const compTot = parseFloat(totals[2].textContent.replace(/[^0-9.]/g, ""));
+  ok(Math.abs(compTot - sum(10)) < 0.02, `comp total sums the value column (${money(compTot)})`);
+  ok(compTot >= askTot - 0.02 && compTot >= soldTot - 0.02,
+     "comped at max, the total is at least as large as both other totals");
   rs.forEach((r, i) => {
     const a = parseFloat(cell(r, 5).replace(/[^0-9.]/g, "")) || 0;
     const s2 = parseFloat(cell(r, 6).replace(/[^0-9.]/g, "")) || 0;
-    const m = parseFloat(cell(r, 7).replace(/[^0-9.]/g, "")) || 0;
-    ok(Math.abs(m - Math.max(a, s2)) < 0.02,
-       `row ${i + 1} max is the larger of its ask and sold (${cell(r, 7)})`);
+    const v = parseFloat(cell(r, 10).replace(/[^0-9.]/g, "")) || 0;
+    ok(Math.abs(v - Math.max(a, s2)) < 0.02,
+       `row ${i + 1} values at the larger of its ask and sold (${cell(r, 10)})`);
   });
+}
+
+// --- the five behind each number -------------------------------------------
+/* A headline price does not say whether it is representative, so each of the
+   two price cells folds out the list it came from. The lists are checked
+   against the snapshot rather than against the page's own arithmetic: an ask
+   depth that quietly showed sales, or a sold list re-sorted into ascending
+   order, would look perfectly plausible on screen. */
+{
+  const clear = () => doc.getElementById("deckClear")
+    .dispatchEvent(new win.MouseEvent("click", { bubbles: true }));
+  // read the price element, never the whole row - the rank sits next to it
+  const nums = (host) => [...host.querySelectorAll(".deck__li b")]
+    .map((b) => parseFloat(b.textContent.replace(/[^0-9.]/g, "")));
+
+  const openList = (card, colIdx, kind) => {
+    clear();
+    type(card.n);
+    const i = opts().findIndex((o) => o.querySelector("b").textContent.trim() === card.n);
+    if (i < 0) return null;
+    pick(i);
+    const td = deckRows()[0].querySelectorAll("td")[colIdx];
+    const btn = td.querySelector('[data-more="' + kind + '"]');
+    if (!btn) return null;
+    const list = td.querySelector(".deck__list");
+    ok(list.hidden === true, `the ${kind} list starts folded away`);
+    btn.dispatchEvent(new win.MouseEvent("click", { bubbles: true }));
+    ok(list.hidden === false, `clicking "${btn.textContent.trim()}" opens it`);
+    return { btn: btn, list: list };
+  };
+
+  // --- the last five sales, newest first ------------------------------------
+  const sold = all.find((c) => (c.c || []).length >= 3 &&
+                               new Set(c.c).size === (c.c || []).length);
+  const s1 = sold && openList(sold, 4, "sold");
+  if (!s1) {
+    ok(false, "a card with several distinct sales offers its sold list");
+  } else {
+    const shown = nums(s1.list);
+    ok(shown.length === sold.c.length,
+       `${sold.n} lists all ${sold.c.length} of its sales (${shown.length})`);
+    /* Newest first, which is the order the feed returns and the only order in
+       which "the last five sales" means anything. Sorting it would turn a
+       falling card and a rising one into the same picture. */
+    ok(shown.every((v, i) => Math.abs(v - sold.c[i]) < 0.005),
+       `in the order they happened, newest first (${shown.join(", ")})`);
+    ok(/newest first/i.test(s1.list.textContent), "and the list says so");
+    s1.btn.dispatchEvent(new win.MouseEvent("click", { bubbles: true }));
+    ok(s1.list.hidden === true, "clicking again folds it back");
+  }
+
+  // --- the next five asks, cheapest first -----------------------------------
+  const deep = all.filter((c) => (c.a5 || []).length >= 2);
+  console.log(`      ${deep.length} of ${all.length} cards carry more than one ask`);
+  if (!deep.length) {
+    /* Not an excuse to pass quietly: ask depth is pulled per card, so an empty
+       field means the pull did not land, and the cell is a headline with
+       nothing behind it. Say so loudly rather than skipping. */
+    ok(false, "NO card carries ask depth - the ask pull has not landed yet");
+  } else {
+    const card = deep[0];
+    const a1 = openList(card, 3, "ask");
+    if (!a1) {
+      ok(false, `${card.n} has ${card.a5.length} asks but offers no list`);
+    } else {
+      const shown = nums(a1.list);
+      ok(shown.every((v, i) => Math.abs(v - card.a5[i]) < 0.005),
+         `${card.n} lists its asks cheapest first (${shown.join(", ")})`);
+      ok(Math.abs(shown[0] - card.a) < 0.005,
+         `the headline ask is the first of them (${money(card.a)})`);
+      ok(shown.every((v, i) => i === 0 || v >= shown[i - 1]), "ascending, never re-sorted");
+      ok(/cheapest first/i.test(a1.list.textContent), "and the list says so");
+    }
+    /* The two lists must not be the same list. A card whose asks and sales
+       both come back as five numbers would hide a wired-up-wrong cell. */
+    const both = deep.find((c) => (c.c || []).length >= 2 &&
+                                  (c.a5 || []).join() !== (c.c || []).join());
+    if (both) {
+      clear();
+      type(both.n);
+      const i = opts().findIndex((o) => o.querySelector("b").textContent.trim() === both.n);
+      if (i >= 0) {
+        pick(i);
+        const tds = deckRows()[0].querySelectorAll("td");
+        const askL = nums(tds[3]), soldL = nums(tds[4]);
+        ok(askL.join() !== soldL.join(),
+           `${both.n} shows different numbers for its asks and its sales`);
+        ok(askL.join() === both.a5.join() && soldL.join() === both.c.join(),
+           "each cell shows its own field, not the other's");
+      }
+    }
+  }
+  clear();
 }
 
 // --- outlier flag -----------------------------------------------------------
@@ -224,10 +324,12 @@ if (opts().length) pick(0);
     .map((h) => h.textContent.trim());
   ok(heads[3] === "Asking", `Asking column present (${heads[3]})`);
   ok(heads[4] === "Avg Last 5 Sold", `Avg Last 5 Sold column present (${heads[4]})`);
-  ok(heads[7] === "Max(Ask, Sold)", `Max(Ask, Sold) column present (${heads[7]})`);
+  ok(!heads.some((h) => /^Max\(/.test(h)),
+     "the merged Max column is gone - ask and sold stand separately");
   ok(heads.length === 12, `the table has 12 columns (${heads.length})`);
-  ok(heads[8] === "Comp" && heads[9] === "%" && heads[10] === "Value",
-     `Comp, % and Value close the table (${heads.slice(8, 11).join(" | ")})`);
+  ok(heads[7] === "Comp Choice" && heads[8] === "Price" &&
+     heads[9] === "%" && heads[10] === "Value",
+     `Comp Choice, Price, % and Value close the table (${heads.slice(7, 11).join(" | ")})`);
 }
 
 // --- removing and clearing -------------------------------------------------
@@ -264,7 +366,7 @@ if (opts().length) pick(0);
       ok(!!r.querySelector(".deck__sub"), "the label is its own element, not bare text");
       ok(cell(r, 5) === money(mean), "it now contributes to the ask total");
       ok(cell(r, 5) === cell(r, 6), "ask and sold totals match on a borrowed ask");
-      ok(cell(r, 7) === cell(r, 6), "Max equals both when the ask was borrowed");
+      ok(cell(r, 10) === cell(r, 6), "the comped value equals both when the ask was borrowed");
       ok(/falls back to its sold average/.test(doc.getElementById("decknote").textContent),
          "the note explains the fallback");
     }
@@ -333,8 +435,8 @@ if (opts().length) pick(0);
     const name = r.querySelector(".card").childNodes[0].textContent.trim();
     const card = all.find((c) => c.n === name);
     if (card && card.a != null) {
-      ok(cell(r, 3) === money(card.a),
-         `a loaded row is priced from the current snapshot (${cell(r, 3)})`);
+      ok(headline(r, 3) === money(card.a),
+         `a loaded row is priced from the current snapshot (${headline(r, 3)})`);
     }
   }
 
@@ -433,6 +535,41 @@ if (opts().length) pick(0);
     sel.dispatchEvent(new win.Event("change", { bubbles: true }));
     const sold = valOf(sideRows("deckbody")[0]);
     ok(sold !== full || true, `comp basis is selectable (max ${full} -> sold ${sold})`);
+
+    /* The price column shows the number the row is actually valued at, and is
+       the way to overrule the board on a card it cannot price properly. */
+    const priceOf = (row) => row.querySelector(".deck__price");
+    const p0 = priceOf(sideRows("deckbody")[0]);
+    ok(!!p0, "each row shows the price it is comped at");
+    ok(Math.abs(parseFloat(p0.value) - sold) < 0.02,
+       `the price box follows the chosen basis (${p0.value} on sold)`);
+
+    set(p0, "1234");
+    const manualRow = sideRows("deckbody")[0];
+    ok(manualRow.querySelector(".deck__comp").value === "manual",
+       "typing a price switches the choice to Manual");
+    ok(Math.abs(valOf(manualRow) - 1234) < 0.02,
+       `and the row values at what was typed (${valOf(manualRow)})`);
+
+    /* A percentage still applies on top: 1234 at 50% is 617, not either number
+       on its own. */
+    set(priceOf(sideRows("deckbody")[0]).closest("tr").querySelector(".deck__pct"), "50");
+    ok(Math.abs(valOf(sideRows("deckbody")[0]) - 617) < 0.02,
+       `a percentage still applies to a manual price (${valOf(sideRows("deckbody")[0])})`);
+    set(sideRows("deckbody")[0].querySelector(".deck__pct"), "100");
+
+    // clearing the box must fall back to a real basis, not value the row at nothing
+    set(sideRows("deckbody")[0].querySelector(".deck__price"), "");
+    const cleared = sideRows("deckbody")[0];
+    ok(cleared.querySelector(".deck__comp").value !== "manual",
+       "clearing the price leaves Manual behind");
+    ok(valOf(cleared) > 0, `and the row is worth something again (${valOf(cleared)})`);
+
+    // Manual is offered as a choice in its own right
+    const choices = [...sideRows("deckbody")[0].querySelectorAll(".deck__comp option")]
+      .map((o) => o.textContent.trim());
+    ok(choices.join(",") === "Ask,Sold,Max,Manual",
+       `the choices are Ask, Sold, Max and Manual (${choices.join(", ")})`);
   }
 
   click(doc.getElementById("tradeClear"));

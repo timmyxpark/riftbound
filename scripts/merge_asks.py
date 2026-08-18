@@ -4,10 +4,12 @@
     python3 merge_asks.py ask_pull.txt snapshot.json snapshot.out.json
 
 Line format, one per product:
-    id|ask|printing|nQualifying|nSeen
-    id|none|-|0|nSeen              (nothing qualifying is listed right now)
+    id|ask|printing|nQualifying|nSeen|p,p,p,p,p
+    id|none|-|0|nSeen|             (nothing qualifying is listed right now)
 
-Only the `a` field is touched. History, sales and names are left alone.
+The last field is the ask depth - the cheapest five qualifying asks, ascending,
+whose first entry is `ask` itself. Only `a` and `a5` are touched. History, sales
+and names are left alone.
 
 Why this exists: the stored asks priced some cards off listings that are not
 Near Mint English raw. Yasuo, Unforgiven (Overnumbered) asked 50.00 against a
@@ -39,12 +41,16 @@ def parse(path):
         if not line:
             continue
         p = line.split("|")
-        if len(p) != 5:
-            bad.append(f"line {n}: {len(p)} fields, expected 5")
+        if len(p) != 6:
+            bad.append(f"line {n}: {len(p)} fields, expected 6")
             continue
         pid = int(p[0])
+        depth = [round(float(x), 2) for x in p[5].split(",") if x.strip()]
         if p[1] == "none":
-            out[pid] = None
+            if depth:
+                bad.append(f"line {n} (id {pid}): no ask but a depth of {depth}")
+                continue
+            out[pid] = (None, [])
             continue
         try:
             ask = float(p[1])
@@ -54,7 +60,18 @@ def parse(path):
         if ask <= 0:
             bad.append(f"line {n} (id {pid}): ask {ask} is not positive")
             continue
-        out[pid] = ask
+        if len(depth) > 5:
+            bad.append(f"line {n} (id {pid}): {len(depth)} asks, depth caps at 5")
+            continue
+        if depth != sorted(depth) or any(v <= 0 for v in depth):
+            bad.append(f"line {n} (id {pid}): depth is not ascending and positive: {depth}")
+            continue
+        # The headline ask must be the first of its own depth list, or the cell
+        # would name a price that no listing shown beneath it matches.
+        if depth and abs(depth[0] - ask) > 0.005:
+            bad.append(f"line {n} (id {pid}): ask {ask} is not the cheapest of {depth}")
+            continue
+        out[pid] = (ask, depth)
     return out, bad
 
 
@@ -93,10 +110,15 @@ def main():
             print("  error ", b)
         return 1
 
-    changed, cleared, moves = 0, 0, []
-    for pid, ask in asks.items():
+    changed, cleared, moves, deep = 0, 0, [], 0
+    for pid, (ask, depth) in asks.items():
         section, setname, c = cards[pid]
         old = c.get("a")
+        # The depth always lands, even when the ask itself has not moved: the
+        # listings behind an unchanged cheapest price move constantly.
+        c["a5"] = depth
+        if len(depth) >= 2:
+            deep += 1
         if old == ask:
             continue
         changed += 1
@@ -121,6 +143,7 @@ def main():
     print(f"  pulled   {len(asks)} asks")
     print(f"  changed  {changed} ({share:.0%})")
     print(f"  cleared  {cleared} to 'none listed'")
+    print(f"  depth    {deep} of {len(asks)} have more than one ask listed")
     if missing:
         print(f"  note  {len(missing)} snapshot cards had no pulled ask, left as they were")
     big = [m for m in moves if m[0] >= REPORT_MOVE]

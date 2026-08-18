@@ -97,20 +97,43 @@ def listings(pid):
     return out
 
 
-def ask_and_printing(pid, rows=None):
-    """(ask, printing). Printing is decided here and reused by history+sales."""
-    rows = listings(pid) if rows is None else rows
+def clean_asks(rows):
+    """(ascending card-only prices, printing) for the qualifying listings.
+
+    The filter chain lives here once so the ask and the ask depth can never
+    disagree. That matters more than it looks: the whole point of showing five
+    asks is to say whether the cheapest is a lone undercut, and a depth list
+    filtered any more loosely would seat a Chinese copy at position two, under
+    the English ones - the exact failure the ask column was fixed for.
+    """
     ok = [l for l in rows
           if l.get("condition") == "Near Mint"
           and l.get("language") == "English"
           and not foreign_or_graded((l.get("customData") or {}).get("title"))]
     if not ok:
-        return None, None
+        return [], None
     normals = [l for l in ok if l.get("printing") == "Normal"]
     pick = normals if normals else ok
     printing = "Normal" if normals else (pick[0].get("printing") or "Foil")
-    total = lambda l: round(float(l.get("price", 0)), 2)   # card only, no shipping
-    return total(min(pick, key=total)), printing
+    price = lambda l: round(float(l.get("price", 0)), 2)   # card only, no shipping
+    return sorted(price(l) for l in pick), printing
+
+
+def ask_and_printing(pid, rows=None):
+    """(ask, printing). Printing is decided here and reused by history+sales."""
+    prices, printing = clean_asks(listings(pid) if rows is None else rows)
+    return (prices[0] if prices else None), printing
+
+
+def ask_depth(rows, depth=5):
+    """The cheapest few qualifying asks, ascending - the cheapest one first.
+
+    Takes rows the caller already fetched rather than fetching its own, so depth
+    costs no extra request: every pull already has the listing feed in hand when
+    it works out the ask.
+    """
+    prices, _ = clean_asks(rows)
+    return prices[:depth]
 
 
 # ---------------------------------------------------------------- history

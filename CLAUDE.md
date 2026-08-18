@@ -50,6 +50,11 @@ All four suites must pass. They exist because of specific bugs that shipped:
 - **Near Mint, raw only.** Grades appear in the sale title, not `listingType`.
 - **Printing.** A product can carry both a Normal and a Foil row. Prefer Normal
   where it exists; it is what the ask column prices and where the volume is.
+- **The five behind each number.** `a5` is the cheapest five asks (cheapest
+  first, first entry equals `a`); `c` is the last five sales (newest first).
+  Neither may be re-sorted for display, and `a5` must come from the same
+  `clean_asks` chain as the ask - see HANDOFF. The merges refuse the file if
+  `a5[0]` and `a` disagree.
 - **Market price is a trailing average** and legitimately sits outside a given
   week's low-to-high range on thin cards. That is signal, not corruption.
 - **Prices exclude shipping.** Ask, sales and the weekly low/high are all the

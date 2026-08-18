@@ -12,6 +12,7 @@ _sys.path.insert(0, _os.path.dirname(_os.path.abspath(__file__)))
 Asks for these 137 come from ask_sigovr.txt, already pulled. This adds:
     sig_hist.txt / ovr_hist.txt   id|weeks|first|last|lo|hi|sl|sh|sm   (merge_cards)
     sigovr_sales_new.txt          id|p,p,p                             (merge_sales)
+    ask_sigovr.txt                id|ask|printing|0|0|p,p,p,p,p        (merge_asks)
 
 History ships at full weekly resolution here, not the catalog's 12 bins - it is
 only 137 cards, and the signature charts are the ones people actually read.
@@ -23,7 +24,7 @@ column and quietly overstate the tail. Depth is given up rather than mixing -
 these sections drop from five to whatever survives filtering.
 """
 import json, os, sys, time
-from card_lib import ask_and_printing, history, sales, pack
+from card_lib import ask_and_printing, ask_depth, history, sales, pack, listings
 
 HERE = WORK
 REPO = ROOT
@@ -47,8 +48,11 @@ for section, hist_name in sections.items():
             if pid in done:
                 continue
             try:
-                ask, pr = ask_and_printing(pid)
-                asks.append(f"{pid}|{ask if ask is not None else 'none'}|{pr or '-'}|0|0")
+                # One listing fetch, reused for the ask and its depth.
+                rows = listings(pid)
+                ask, pr = ask_and_printing(pid, rows)
+                depth = ",".join(f"{v}" for v in ask_depth(rows))
+                asks.append(f"{pid}|{ask if ask is not None else 'none'}|{pr or '-'}|0|0|{depth}")
                 time.sleep(0.25)
                 weeks, lo, hi, mk = history(pid, pr)
                 time.sleep(0.25)

@@ -6,10 +6,12 @@
 Line format, one per card, `~` separated because card names contain commas but
 never a tilde:
 
-    id~name~rarity~ask~weeks~first~last~lo~hi~packedLow~packedHigh~packedMarket~sales
+    id~name~rarity~ask~weeks~first~last~lo~hi~packedLow~packedHigh~packedMarket~sales~asks
 
 `ask` may be empty (nothing listed). `sales` is a comma list, possibly empty.
-lo/hi bound all three packed series.
+lo/hi bound all three packed series. `asks` is the cheapest five qualifying
+asks, ascending; its first entry must equal `ask`, which is what makes the
+depth list and the headline provably the same pull.
 """
 
 import json
@@ -18,7 +20,7 @@ import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-FIELDS = 13
+FIELDS = 14
 
 
 def parse(path):
@@ -46,6 +48,7 @@ def parse(path):
             "hi": float(p[8]) if p[8] else None,
             "ql": p[9] or None, "qh": p[10] or None, "qm": p[11] or None,
             "c": [round(float(x), 2) for x in p[12].split(",") if x.strip()],
+            "a5": [round(float(x), 2) for x in p[13].split(",") if x.strip()],
         }
 
         if rec["ql"]:
@@ -61,6 +64,20 @@ def parse(path):
                 bad.append(f"id {pid}: lo above hi")
         if len(rec["c"]) > 5:
             bad.append(f"id {pid}: {len(rec['c'])} sales, feed caps at 5")
+        a5 = rec["a5"]
+        if len(a5) > 5:
+            bad.append(f"id {pid}: {len(a5)} asks, depth caps at 5")
+        if a5 != sorted(a5):
+            bad.append(f"id {pid}: ask depth is not ascending: {a5}")
+        if any(v <= 0 for v in a5):
+            bad.append(f"id {pid}: ask depth has a non-positive price: {a5}")
+        # The headline ask IS the first of the depth list. If they disagree the
+        # two came from different filters or different fetches, and the cell
+        # would show a price that no listing in the list below it matches.
+        if a5 and rec["a"] is not None and abs(a5[0] - rec["a"]) > 0.005:
+            bad.append(f"id {pid}: ask {rec['a']} is not the cheapest of {a5}")
+        if rec["a"] is None and a5:
+            bad.append(f"id {pid}: ask depth {a5} but no ask")
         if not rec["n"]:
             bad.append(f"id {pid}: empty name")
         out[pid] = rec
@@ -105,8 +122,10 @@ def main():
     charted = sum(1 for c in cards if c.get("ql"))
     withask = sum(1 for c in cards if c.get("a") is not None)
     withsales = sum(1 for c in cards if c.get("c"))
+    deep = sum(1 for c in cards if len(c.get("a5") or []) >= 2)
     print(f"\n{set_name}: {len(cards)} cards, {charted} charted, "
-          f"{withask} with an ask, {withsales} with sales")
+          f"{withask} with an ask, {withsales} with sales, "
+          f"{deep} with more than one ask listed")
     json.dump(snap, open(out_path, "w"), indent=2, ensure_ascii=False)
 
 

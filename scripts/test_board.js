@@ -18,6 +18,7 @@ const dom = new JSDOM(fs.readFileSync(file, "utf8"), {
     .on("error", (m) => errors.push(m)),
 });
 const doc = dom.window.document;
+const win = dom.window;
 
 let fails = 0;
 const ok = (cond, msg) => { console.log((cond ? "pass  " : "FAIL  ") + msg); if (!cond) fails++; };
@@ -84,7 +85,12 @@ ok(rows("extrabody") === EXTRA_ROWS,
      banner, so each row has to say what it is on its own. */
   const subs = [...doc.querySelectorAll("#extrabody .card .rar")].map((e) => e.textContent);
   ok(subs.length === EXTRA_ROWS, `every row carries an identity line (${subs.length})`);
-  ok(subs.some((t) => /Organized Play/.test(t)), "rows name their source");
+  /* The source used to ride along in the identity line; it is a sortable
+     column of its own now, so that is where it has to be checked. */
+  const srcs = [...doc.querySelectorAll("#extrabody .setcell")].map((e) => e.textContent.trim());
+  ok(srcs.length === EXTRA_ROWS, `every row names its source in the set column (${srcs.length})`);
+  ok(srcs.some((t) => /Organized Play/.test(t)), "rows name their source");
+  ok(new Set(srcs).size > 1, `more than one source is represented (${new Set(srcs).size})`);
   // number forms here: 247/298, the alt-art 039a/298, and runes R04a
   const numbered = subs.filter((t) => /\d+[a-z]?\s*\/\s*\d+|R\d+[a-z]?/i.test(t)).length;
   ok(numbered > EXTRA_ROWS * 0.9,
@@ -94,7 +100,7 @@ ok(rows("extrabody") === EXTRA_ROWS,
   const asks = [...doc.querySelectorAll("#extrabody tr")]
     .filter((r) => !r.querySelector("td[colspan]"))
     .map((r) => {
-      const t = r.querySelectorAll("td")[2].textContent.trim();
+      const t = r.querySelectorAll("td")[3].textContent.trim();
       return /^\$/.test(t) ? parseFloat(t.replace(/[^0-9.]/g, "")) : null;
     });
   const priced = asks.filter((v) => v !== null);
@@ -115,8 +121,47 @@ ok(rows("catbody") === CATALOG_ROWS,
 const catHeads = doc.querySelectorAll("#p-cat thead th").length;
 const catCells = doc.querySelectorAll("#catbody tr:not(.setrow) td").length /
                  Math.max(rows("catbody"), 1);
-ok(catHeads === 6, `catalog header has ${catHeads} columns (expect 6)`);
-ok(catCells === 6, `catalog rows have ${catCells} cells (expect 6)`);
+ok(catHeads === 7, `catalog header has ${catHeads} columns (expect 7)`);
+ok(catCells === 7, `catalog rows have ${catCells} cells (expect 7)`);
+
+/* One table across all four sets, not one per set. The set became a column, so
+   a single table must carry every set at once - the old shape would have shown
+   one set's cards between two banner rows. */
+{
+  const sets = new Set([...doc.querySelectorAll("#catbody .setcell")].map((e) => e.textContent.trim()));
+  ok(sets.size === 4, `every set shares one table (${[...sets].sort().join(", ")})`);
+  ok(doc.querySelectorAll("#catbody tr.setrow").length === 0, "no per-set banner rows remain");
+  ok(doc.querySelectorAll("#sigbody tr.setrow").length === 0, "nor in the signature table");
+}
+
+/* Sorting: the headings have to actually reorder the table, and unpriced cards
+   have to stay at the bottom in both directions rather than leading an
+   ascending sort with the absence of a price. */
+{
+  const th = [...doc.querySelectorAll("#p-cat thead th")].find((h) => h.getAttribute("data-sort") === "ask");
+  ok(!!th, "the ask column is sortable");
+  const asks = () => [...doc.querySelectorAll("#catbody tr")]
+    .filter((r) => !r.querySelector("td[colspan]"))
+    .map((r) => {
+      const t = r.querySelectorAll("td")[4].textContent.trim();
+      return /^\$/.test(t) ? parseFloat(t.replace(/[^0-9.]/g, "")) : null;
+    });
+  const desc = asks().filter((v) => v !== null);
+  ok(desc.every((v, i) => i === 0 || desc[i - 1] >= v), `ask sorts high to low by default ($${desc[0]})`);
+  th.dispatchEvent(new win.MouseEvent("click", { bubbles: true }));
+  const after = asks();
+  const asc = after.filter((v) => v !== null);
+  ok(asc.every((v, i) => i === 0 || asc[i - 1] <= v), `clicking reverses it ($${asc[0]} first)`);
+  const firstNull = after.indexOf(null);
+  ok(firstNull === -1 || after.slice(firstNull).every((v) => v === null),
+     "unpriced cards stay at the bottom even sorted ascending");
+  th.dispatchEvent(new win.MouseEvent("click", { bubbles: true }));
+
+  const setTh = [...doc.querySelectorAll("#p-cat thead th")].find((h) => h.getAttribute("data-sort") === "set");
+  setTh.dispatchEvent(new win.MouseEvent("click", { bubbles: true }));
+  const bySet = [...doc.querySelectorAll("#catbody .setcell")].map((e) => e.textContent.trim());
+  ok(bySet.every((v, i) => i === 0 || bySet[i - 1] <= v), `the set column sorts too (${bySet[0]} first)`);
+}
 
 /* the Last 5 sales column must actually carry numbers, not just exist */
 {

@@ -395,7 +395,22 @@ Catalog cards, packed as before - two digits per week, 0-99:
 
     "lo": 3.49, "hi": 22.98        min and max across ALL THREE series
     "ql": "...", "qh": "...", "qm": "..."
-    "c": [4.51, 4.60, ...]         last 5 sales, newest first
+    "c":  [4.51, 4.60, ...]        last 5 sales, NEWEST first
+    "a5": [4.20, 4.35, ...]        cheapest 5 asks, CHEAPEST first
+
+The two lists run in opposite orders and neither may be sorted on the way to the
+screen. `c` is chronological - re-sorting it turns a card falling from $80 to
+$20 and one climbing from $20 to $80 into the same five numbers. `a5` is a price
+ladder, and its first entry is `a` itself; the merges refuse the file if those
+two disagree, because a cell that headlines a price no listing beneath it
+matches is worse than one with no list at all.
+
+`a5` costs no extra request: every pull already fetches the listing feed to work
+out the ask, so the depth comes off rows that are already in hand. It runs
+through `card_lib.clean_asks`, the same filter chain as the ask - Near Mint,
+English, raw, Normal preferred - which is the whole point. A depth list filtered
+any more loosely would seat a Chinese copy at position two, under the English
+ones, and that is the exact bug the ask column was fixed for in the first place.
 
 Note the change: `lo`/`hi` used to bound the single series. They now bound all
 three, so one pair rescales every line. Rescale old cards when you refill them.
