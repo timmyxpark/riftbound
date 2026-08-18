@@ -565,13 +565,22 @@
   .deck__layout { display: flex; gap: 16px; align-items: flex-start; }
   /* One column until a trade side exists, two once it does. min-width:0 lets
      each table keep its own horizontal scroll instead of stretching the row. */
-  .deck__sides { display: flex; gap: 16px; align-items: flex-start; }
+  /* stretch, not flex-start: the two panels then share a height, so the cash
+     and slab rows beneath them line up even when one side holds more cards */
+  .deck__sides { display: flex; gap: 16px; align-items: stretch; }
+  .deck__sides > .side { display: flex; flex-direction: column; }
+  .deck__sides > .side > .panel { flex: 1 1 auto; }
   /* Side by side, nine columns do not fit in half the width. A trade is about
      what each line is worth, not the unit price, so the two per-unit columns
      stand down and the line totals stay. They come back when the trade side is
      closed. */
-  .deck__sides.is-trade th:nth-child(4), .deck__sides.is-trade td:nth-child(4),
-  .deck__sides.is-trade th:nth-child(5), .deck__sides.is-trade td:nth-child(5) {
+  /* thead and tbody only. The footer's label carries a colspan, so its cells do
+     not line up with these indexes - an unscoped rule hid the Max total there
+     while the three totals were all present in the DOM. */
+  .deck__sides.is-trade thead th:nth-child(4),
+  .deck__sides.is-trade tbody td:nth-child(4),
+  .deck__sides.is-trade thead th:nth-child(5),
+  .deck__sides.is-trade tbody td:nth-child(5) {
     display: none;
   }
   .deck__sides.is-trade td.card { min-width: 128px; }
@@ -952,15 +961,6 @@
       <div class="sig__title">Deck Pricer</div>
       <div class="sig__sub">Build a list and price it three ways at once. <b>Asking</b> is the cheapest Near Mint English copy listed, card price only, no shipping - what you would have to undercut to sell; a card with nothing listed borrows its own sold average instead of counting as zero, and the cell says so. <b>Avg Last 5 Sold</b> is the mean of that card's last five real sales - closer to what it actually moves for. <b>Max(Ask, Sold)</b> takes whichever is higher for each card and totals those.</div>
 
-      <div class="deck__add">
-        <div class="deck__box">
-          <input type="search" id="deckInput" placeholder="Start typing a card name"
-                 aria-label="Add a card by name" autocomplete="off" spellcheck="false"
-                 role="combobox" aria-expanded="false" aria-controls="deckSuggest" aria-autocomplete="list">
-          <div class="deck__suggest" id="deckSuggest" role="listbox" aria-label="Matching cards"></div>
-        </div>
-        <button class="chip chip--reset" id="deckClear">Clear list</button>
-      </div>
 
       <div class="deck__add">
         <button class="chip" id="tradeToggle">Add a trade side</button>
@@ -971,6 +971,15 @@
           <div class="deck__sides" id="deckSides">
           <div class="side" id="sideA">
           <div class="side__head" id="sideAhead" style="display:none">Your side</div>
+            <div class="deck__add">
+              <div class="deck__box">
+                <input type="search" id="deckInput" placeholder="Start typing a card name"
+                       aria-label="Add a card by name" autocomplete="off" spellcheck="false"
+                       role="combobox" aria-expanded="false" aria-controls="deckSuggest" aria-autocomplete="list">
+                <div class="deck__suggest" id="deckSuggest" role="listbox" aria-label="Matching cards"></div>
+              </div>
+              <button class="chip chip--reset" id="deckClear">Clear list</button>
+            </div>
           <div class="panel">
             <div class="scroll">
               <table>
