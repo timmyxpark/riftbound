@@ -80,12 +80,31 @@ ok(rows("extrabody") === EXTRA_ROWS,
   const metal = [...doc.querySelectorAll("#extrabody .card")]
     .filter((td) => /\(Metal\)/.test(td.textContent)).length;
   ok(metal > 0, `metal cards are present (${metal})`);
-  // grouped by source, not by booster set
-  const banners = [...doc.querySelectorAll("#extrabody tr.setrow")]
-    .map((r) => r.textContent.trim());
-  ok(banners.length > 1, `grouped into ${banners.length} sources`);
-  ok(banners.some((b) => /Organized Play/.test(b)),
-     "Organized Play promos are one of the groups");
+  /* Sorted, not grouped: ordering 401 cards by price dissolves any source
+     banner, so each row has to say what it is on its own. */
+  const subs = [...doc.querySelectorAll("#extrabody .card .rar")].map((e) => e.textContent);
+  ok(subs.length === EXTRA_ROWS, `every row carries an identity line (${subs.length})`);
+  ok(subs.some((t) => /Organized Play/.test(t)), "rows name their source");
+  // number forms here: 247/298, the alt-art 039a/298, and runes R04a
+  const numbered = subs.filter((t) => /\d+[a-z]?\s*\/\s*\d+|R\d+[a-z]?/i.test(t)).length;
+  ok(numbered > EXTRA_ROWS * 0.9,
+     `rows carry the card number, which identifies an artless promo (${numbered}/${EXTRA_ROWS})`);
+
+  // default sort is price, highest first, with unpriced cards last
+  const asks = [...doc.querySelectorAll("#extrabody tr")]
+    .filter((r) => !r.querySelector("td[colspan]"))
+    .map((r) => {
+      const t = r.querySelectorAll("td")[2].textContent.trim();
+      return /^\$/.test(t) ? parseFloat(t.replace(/[^0-9.]/g, "")) : null;
+    });
+  const priced = asks.filter((v) => v !== null);
+  ok(priced.length > 0 && priced.every((v, i) => i === 0 || priced[i - 1] >= v),
+     `defaults to price descending (top ${priced.slice(0, 3).map((v) => "$" + v).join(", ")})`);
+  const firstNull = asks.indexOf(null);
+  ok(firstNull === -1 || asks.slice(firstNull).every((v) => v === null),
+     "cards with no ask sort to the end, not the top");
+  ok(doc.querySelectorAll("#extrasort .chip--x").length >= 4,
+     `sort control offers ${doc.querySelectorAll("#extrasort .chip--x").length} orders`);
 }
 /* the catalog grows as sets land; read the expectation from the snapshot the
    board was built from rather than pinning a number that goes stale */

@@ -84,8 +84,11 @@ assert not any("fonts.googleapis" in l or "fonts.gstatic" in l for l in body)
 text = "\n".join(body)
 
 # ---------- 3. route every <img> site through the embedded map ----------
-# Three sites now: renderCatalog and renderCards write the tag on one and two
-# source lines respectively, and the deck pricer keys off `e` rather than `c`.
+# Four sites now: renderCatalog and renderCards write the tag on one and two
+# source lines respectively, the deck pricer keys off `e` rather than `c`, and
+# renderExtras adds a fourth. This count is asserted precisely so that adding a
+# table without routing its art through the embedded map fails the build rather
+# than shipping a tab of broken images - which is what just happened here.
 # One pattern covers all three rather than three brittle ones, and the count is
 # asserted so a fourth site cannot be added without this failing loudly.
 THUMB = re.compile(
@@ -95,7 +98,7 @@ THUMB = re.compile(
     r"src=\"https://tcgplayer-cdn\.tcgplayer\.com/product/' \+ ([ce])\.id \+ '_200w\.jpg\"></td>'")
 
 text, n_thumb = THUMB.subn(lambda m: "thumbCell(%s.id)" % m.group(1), text)
-assert n_thumb == 3, f"expected 3 thumbnail sites, rewrote {n_thumb}"
+assert n_thumb == 4, f"expected 4 thumbnail sites, rewrote {n_thumb}"
 assert "tcgplayer-cdn" not in text, "a CDN reference survived"
 
 helper = (

@@ -573,6 +573,13 @@
      .thumb img rule without depending on stylesheet order. */
   /* nine columns in a narrowed main column: buy the last one its room back */
   #p-deck thead th, #p-deck tbody td { padding-left: 7px; padding-right: 7px; }
+
+  /* Promo names carry qualifiers - "(Metal) (Prize Wall)" - and the row's
+     identity line sits beneath them, so the card column needs width or every
+     row wraps to four lines. The chart gives it back. */
+  #p-extra td.card { min-width: 210px; }
+  #p-extra td.card .rar { white-space: normal; line-height: 1.35; }
+  #p-extra td.trend { width: 40%; }
   #p-deck td.thumb { width: 62px; padding: 6px 4px 6px 8px; }
   #p-deck td.thumb img { width: 62px; min-width: 62px; }
   #p-deck .card.ind { padding-left: 10px; }
@@ -826,7 +833,15 @@
   <section id="p-extra" class="tabpanel">
   <div class="sig">
     <div class="sig__title">Promos &amp; Extras</div>
-    <div class="sig__sub">Everything the other tabs do not carry: Organized Play promos including the metal Prize Wall and Best Of cards, the alternate arts and showcase runes that the Playables classifier deliberately drops, Proving Grounds, Judge promos and Secret Garden. Same format as the signature tables - cheapest Near Mint English ask, card price only, and the last five real sales. Grouped by where the card comes from rather than by booster set, so the set chips above do not narrow this table.</div>
+    <div class="sig__sub">Everything the other tabs do not carry: Organized Play promos including the metal Prize Wall and Best Of cards, the alternate arts and showcase runes that the Playables classifier deliberately drops, Proving Grounds, Judge promos and Secret Garden. Same format as the signature tables - cheapest Near Mint English ask, card price only, and the last five real sales. Sorted rather than grouped, so every row carries its own rarity, card number and source: 180 of these have no art on TCGplayer at all, and the number is what tells a metal Prize Wall promo apart from the ordinary print.</div>
+    <div class="setfilter" id="extrasort">
+      <span class="setfilter__label">Sort</span>
+      <button class="chip chip--x is-on" data-sort="price-desc">Price high to low</button>
+      <button class="chip chip--x" data-sort="price-asc">Price low to high</button>
+      <button class="chip chip--x" data-sort="sold-desc">Last sold high to low</button>
+      <button class="chip chip--x" data-sort="name">Name</button>
+      <button class="chip chip--x" data-sort="source">Source</button>
+    </div>
     <div class="ckey"></div>
     <div class="panel">
       <div class="scroll">
@@ -844,6 +859,7 @@
         </table>
       </div>
     </div>
+    <div class="catnote" id="extranote"></div>
   </div>
   </section>
 
@@ -1573,6 +1589,105 @@ function renderSealedTable(records, targetId, sets) {
   }
 }
 
+/* ---------------- promos & extras ----------------
+   Its own renderer rather than renderCards, because this section is sorted
+   rather than grouped: 401 cards ordered by price makes the source banners
+   meaningless, so every row has to carry its own identity. 180 of these cards
+   have no art on TCGplayer at all - mostly Prize Wall promos - so the number
+   and source are what tell you what you are looking at. */
+var EXTRA_SORTS = ["price-desc", "price-asc", "sold-desc", "name", "source"];
+var activeExtraSort = "price-desc";
+
+function shortSource(s) {
+  s = String(s || "");
+  if (/Organized Play/.test(s)) return "Organized Play";
+  if (/Judge/.test(s)) return "Judge promo";
+  if (/Riftbound Promotional/.test(s)) return "Promotional";
+  if (/Proving Grounds/.test(s)) return "Proving Grounds";
+  return s;                     /* a booster set: these are its alt arts/runes */
+}
+
+function lastSold(c) {
+  return (c.c && c.c.length) ? c.c[0] : null;
+}
+
+function renderExtras() {
+  var body = document.getElementById("extrabody");
+  if (!body) return;
+
+  var cards = [];
+  (SEED.extras || []).forEach(function (g) {
+    (g.cards || []).forEach(function (c) {
+      if (matchesName(c.n)) cards.push(c);
+    });
+  });
+
+  /* Cards with no ask sort to the end of a price sort rather than to the top:
+     "no listings" is not the cheapest thing here, it is the absence of a
+     price, and 49 of these have none. */
+  var by = {
+    "price-desc": function (a, b) { return (b.a == null ? -1 : b.a) - (a.a == null ? -1 : a.a); },
+    "price-asc":  function (a, b) { return (a.a == null ? Infinity : a.a) - (b.a == null ? Infinity : b.a); },
+    "sold-desc":  function (a, b) { return (lastSold(b) == null ? -1 : lastSold(b)) - (lastSold(a) == null ? -1 : lastSold(a)); },
+    "name":       function (a, b) { return String(a.n).localeCompare(String(b.n)); },
+    "source":     function (a, b) {
+      var d = shortSource(a.src).localeCompare(shortSource(b.src));
+      return d || String(a.n).localeCompare(String(b.n));
+    }
+  }[activeExtraSort] || by_price_desc_fallback;
+  cards.sort(by);
+
+  var html = "", idx = 0;
+  cards.forEach(function (c) {
+    var sub = [c.r, c.num, shortSource(c.src)].filter(Boolean).join(" &middot; ");
+    var sales = (c.c && c.c.length)
+      ? c.c.map(function (v, i) {
+          return '<div class="' + (i === 0 ? "top" : "") + '">' + whole(v) + '</div>';
+        }).join("")
+      : '<div class="dim">none</div>';
+    html += '<tr>' +
+      '<td class="thumb"><img loading="lazy" alt="" onerror=\'this.style.display="none"\' src="https://tcgplayer-cdn.tcgplayer.com/product/' + c.id + '_200w.jpg"></td>' +
+      '<td class="card ind">' + c.n + '<span class="rar">' + sub + '</span></td>' +
+      '<td class="ask">' + (c.a ? money(c.a) : '<span class="dim">none listed</span>') + '</td>' +
+      '<td class="sales">' + sales + '</td>' +
+      '<td class="trend">' + cardChart(c, idx++) + '</td>' +
+    '</tr>';
+  });
+
+  body.innerHTML = html || '<tr><td colspan="5" class="emptynote">' +
+    (activeName ? 'No cards match that name.' : 'Nothing to show.') + '</td></tr>';
+
+  var note = document.getElementById("extranote");
+  if (note) {
+    var priced = cards.filter(function (c) { return c.a != null; }).length;
+    note.textContent = cards.length + " cards, " + priced + " with a listed ask";
+  }
+}
+
+function by_price_desc_fallback(a, b) {
+  return (b.a == null ? -1 : b.a) - (a.a == null ? -1 : a.a);
+}
+
+(function setupExtraSort(){
+  var chips = [].slice.call(document.querySelectorAll(".chip--x"));
+  if (!chips.length) return;
+  function paint() {
+    chips.forEach(function (c) {
+      c.classList.toggle("is-on", c.dataset.sort === activeExtraSort);
+    });
+  }
+  repaintExtraSort = function () { activeExtraSort = "price-desc"; paint(); };
+  chips.forEach(function (c) {
+    c.addEventListener("click", function () {
+      if (EXTRA_SORTS.indexOf(c.dataset.sort) < 0) return;
+      activeExtraSort = c.dataset.sort;
+      paint();
+      renderExtras();
+    });
+  });
+  paint();
+})();
+
 function render(snap, sets) {
   renderSealedTable(snap.sets, "body", sets);
   renderSealedTable(snap.boxes, "boxbody", sets);
@@ -1616,6 +1731,7 @@ var activeRarities = ALL_RARITIES.slice();
 var activeMinPrice = 0, activeMaxPrice = null, PRICE_CEIL = 0;
 var activeName = "";
 var repaintSetChips = null, repaintRarityChips = null, repaintPriceChips = null, repaintName = null;
+var repaintExtraSort = null;
 
 /* Match on a folded form so "kaisa" finds "Kai'Sa" and "leblanc" finds
    "LeBlanc" - apostrophes and accents in card names would otherwise make the
@@ -1699,9 +1815,7 @@ function drawAll() {
   render(SEED, activeSets);
   renderCards(SEED.signatures, "sigbody", "signatures", activeSets, null, false, "mid");
   renderCards(SEED.overnumbered, "overbody", "overnumbered", activeSets);
-  /* null sets: these groups are promo/alt-art sources, not booster sets,
-     so the set chips would empty the table rather than narrow it. */
-  renderCards(SEED.extras, "extrabody", "cards", null);
+  renderExtras();
   renderCatalog(SEED.catalog, activeSets, activeRarities, activeMinPrice, activeMaxPrice);
   paintKeys();
   restartCharts(document.querySelector ? document.querySelector(".tabpanel.is-on") : null);
@@ -1761,6 +1875,8 @@ function drawAll() {
       if (rarF) rarF.style.display = (panelId === "p-cat") ? "" : "none";
       var priF = document.getElementById("pricefilter");
       if (priF) priF.style.display = (panelId === "p-cat") ? "" : "none";
+      var sortF = document.getElementById("extrasort");
+      if (sortF) sortF.style.display = (panelId === "p-extra") ? "" : "none";
       var namF = document.getElementById("namefilter");
       if (namF) namF.style.display =
         (panelId === "p-sig" || panelId === "p-over" || panelId === "p-cat"
@@ -1813,6 +1929,11 @@ function drawAll() {
       paint();
     });
   });
+})();
+
+(function initExtraSortVisibility(){
+  var sortF = document.getElementById("extrasort");
+  if (sortF) sortF.style.display = "none";   /* Sealed opens first */
 })();
 
 (function initFilterVisibility(){

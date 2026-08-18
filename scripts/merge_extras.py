@@ -92,6 +92,11 @@ def main():
     groups, order = {}, []
     for pid, rec in pulled.items():
         src = wanted[pid].get("set") or "Other"
+        # A promo with no art is identified by its number and where it came
+        # from, so both travel with the card rather than living only in a
+        # group banner that sorting will dissolve.
+        rec["num"] = wanted[pid].get("num") or None
+        rec["src"] = src
         if src not in groups:
             groups[src] = []
             order.append(src)
