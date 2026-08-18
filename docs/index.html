@@ -594,6 +594,48 @@
   #p-deck td.thumb img { width: 62px; min-width: 62px; }
   #p-deck .card.ind { padding-left: 10px; }
 
+  .side__head { font-size: 11px; font-weight: 700; letter-spacing: 0.09em;
+                text-transform: uppercase; color: var(--soft); margin: 4px 0 7px; }
+  .side__extras { display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
+                  margin: 9px 0 0; font-size: 12px; color: var(--soft); }
+  .side__cash { display: inline-flex; align-items: center; gap: 6px;
+                font-size: 10px; font-weight: 700; letter-spacing: 0.07em;
+                text-transform: uppercase; color: var(--faint); }
+  .side__extras input {
+    font-family: "Inter", system-ui, sans-serif; font-size: 12px; color: var(--ink);
+    background: var(--card); border: 1px solid var(--grid2); border-radius: 6px;
+    padding: 5px 9px; outline: none;
+  }
+  .side__extras input:focus { border-color: var(--peri); box-shadow: 0 0 0 3px var(--peribg); }
+  .side__cash input { width: 84px; font-family: var(--mono); font-variant-numeric: tabular-nums; }
+  .side__slab { display: inline-flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .side__slab input[type=text] { width: 190px; }
+  .side__slab input[type=number] { width: 84px; font-family: var(--mono);
+                                   font-variant-numeric: tabular-nums; }
+  .side__extras .chip { padding: 5px 11px; font-size: 11.5px; }
+
+  .trade__sum { margin-top: 16px; background: var(--card); border: 1px solid var(--grid2);
+                border-radius: 8px; padding: 13px 14px 11px; }
+  .trade__title { font-size: 11px; font-weight: 700; letter-spacing: 0.09em;
+                  text-transform: uppercase; color: var(--faint); margin-bottom: 9px; }
+  .trade__t { width: 100%; border-collapse: collapse; }
+  .trade__t th { font-size: 9.5px; font-weight: 600; letter-spacing: 0.07em;
+                 text-transform: uppercase; color: var(--faint); text-align: right;
+                 padding: 0 8px 6px; border: 0; background: none; }
+  .trade__t th:first-child { text-align: left; }
+  .trade__t td { padding: 5px 8px; border: 0; text-align: right;
+                 font-family: var(--mono); font-size: 13.5px;
+                 font-variant-numeric: tabular-nums; }
+  .trade__lbl { text-align: left !important; font-family: "Inter", system-ui, sans-serif;
+                font-size: 11.5px; font-weight: 600; color: var(--soft); }
+  /* green when the trade comes your way, rose when it costs you - the same
+     reading the rest of the board gives those two colours */
+  .trade__d.in   { color: #2F7F55; font-weight: 700; }
+  .trade__d.out  { color: var(--rose); font-weight: 700; }
+  .trade__d.even { color: var(--faint); }
+  .trade__note { margin-top: 8px; padding-top: 7px; border-top: 1px solid var(--grid);
+                 font-size: 10.5px; color: var(--faint); }
+
   .deck__saved-head {
     font-size: 10px; font-weight: 700; letter-spacing: 0.09em; text-transform: uppercase;
     color: var(--faint); margin-bottom: 10px;
@@ -907,8 +949,13 @@
         <button class="chip chip--reset" id="deckClear">Clear list</button>
       </div>
 
+      <div class="deck__add">
+        <button class="chip" id="tradeToggle">Add a trade side</button>
+      </div>
+
       <div class="deck__layout">
         <div class="deck__main">
+          <div class="side__head" id="sideAhead" style="display:none">Your side</div>
           <div class="panel">
             <div class="scroll">
               <table>
@@ -923,7 +970,57 @@
               </table>
             </div>
           </div>
+          <div class="side__extras" id="sideAextras" style="display:none">
+            <label class="side__cash">Cash
+              <input type="number" id="cashA" min="0" step="1" placeholder="0" aria-label="Cash on your side">
+            </label>
+            <span class="side__slab">
+              <input type="text" id="slabAname" placeholder="Slab, e.g. PSA 10 Yasuo" aria-label="Slab description">
+              <input type="number" id="slabAval" min="0" step="1" placeholder="value" aria-label="Slab value">
+              <button class="chip" id="slabAadd">Add slab</button>
+            </span>
+          </div>
           <div class="catnote" id="decknote"></div>
+
+          <div id="sideB" style="display:none">
+            <div class="side__head">Their side</div>
+            <div class="deck__add">
+              <div class="deck__box">
+                <input type="search" id="tradeInput" placeholder="Add a card to their side"
+                       aria-label="Add a card to their side" autocomplete="off" spellcheck="false"
+                       role="combobox" aria-expanded="false" aria-controls="tradeSuggest" aria-autocomplete="list">
+                <div class="deck__suggest" id="tradeSuggest" role="listbox" aria-label="Matching cards"></div>
+              </div>
+              <button class="chip chip--reset" id="tradeClear">Clear side</button>
+            </div>
+            <div class="panel">
+              <div class="scroll">
+                <table>
+                  <thead>
+                    <tr>
+                      <th></th><th>Qty</th><th>Card</th><th>Asking</th><th>Avg Last 5 Sold</th>
+                      <th>Ask total</th><th>Sold total</th><th>Max(Ask, Sold)</th><th></th>
+                    </tr>
+                  </thead>
+                  <tbody id="tradebody"></tbody>
+                  <tfoot id="tradefoot"></tfoot>
+                </table>
+              </div>
+            </div>
+            <div class="side__extras">
+              <label class="side__cash">Cash
+                <input type="number" id="cashB" min="0" step="1" placeholder="0" aria-label="Cash on their side">
+              </label>
+              <span class="side__slab">
+                <input type="text" id="slabBname" placeholder="Slab, e.g. BGS 9.5 Ahri" aria-label="Slab description">
+                <input type="number" id="slabBval" min="0" step="1" placeholder="value" aria-label="Slab value">
+                <button class="chip" id="slabBadd">Add slab</button>
+              </span>
+            </div>
+            <div class="catnote" id="tradenote"></div>
+
+            <div class="trade__sum" id="tradesum"></div>
+          </div>
         </div>
 
         <aside class="deck__saved">
@@ -36835,13 +36932,19 @@ var DECK_INDEX = null;
 var deckRows = [];
 
 (function setupDeck() {
-  var box   = document.getElementById("deckInput");
-  var sug   = document.getElementById("deckSuggest");
-  var body  = document.getElementById("deckbody");
-  var foot  = document.getElementById("deckfoot");
-  var note  = document.getElementById("decknote");
-  var clear = document.getElementById("deckClear");
-  if (!box || !sug || !body || !foot) return;
+  var el = function (id) { return document.getElementById(id); };
+  /* Two sides so a trade can be priced: yours and theirs. Side B stays hidden
+     until asked for, so the ordinary "what is my pile worth" case is unchanged. */
+  var sideA = { rows: deckRows, cash: 0, box: el("deckInput"), sug: el("deckSuggest"),
+                body: el("deckbody"), foot: el("deckfoot"), note: el("decknote"),
+                totals: null };
+  var sideB = { rows: [], cash: 0, box: el("tradeInput"), sug: el("tradeSuggest"),
+                body: el("tradebody"), foot: el("tradefoot"), note: el("tradenote"),
+                empty: "Nothing on their side yet.", totals: null };
+  var tradeOn = false;
+  if (!sideA.box || !sideA.sug || !sideA.body || !sideA.foot) return;
+  var box = sideA.box, sug = sideA.sug, body = sideA.body, foot = sideA.foot, note = sideA.note;
+  var clear = el("deckClear");
 
   var matches = [], active = -1;
 
@@ -36895,22 +36998,39 @@ var deckRows = [];
     return money(e.avg) + '<span class="deck__sub">from sold avg</span>';
   }
 
-  function addCard(e) {
+  function addCard(e, side) {
     if (!e) return;
-    for (var i = 0; i < deckRows.length; i++) {
-      if (deckRows[i].e.id === e.id) { deckRows[i].q += 1; renderDeck(); return; }
+    side = side || sideA;
+    for (var i = 0; i < side.rows.length; i++) {
+      if (side.rows[i].e.id === e.id && !side.rows[i].e.manual) {
+        side.rows[i].q += 1; renderDeck(); return;
+      }
     }
-    deckRows.push({ e: e, q: 1 });
+    side.rows.push({ e: e, q: 1 });
     renderDeck();
   }
 
+  /* A slab the board cannot price: the trader types what they agreed it is
+     worth, and that one number stands for ask, sold and max. */
+  function addSlab(side, name, value) {
+    var v = parseFloat(value);
+    if (!name || !(v > 0)) return false;
+    side.rows.push({ e: { manual: true, id: "slab-" + (++slabSeq), n: name,
+                          a: Math.round(v * 100) / 100, avg: Math.round(v * 100) / 100,
+                          nSales: 0, odd: null }, q: 1 });
+    renderDeck();
+    return true;
+  }
+  var slabSeq = 0;
+
   /* Totals are recomputed in place rather than by re-rendering the tbody, so
      typing in a quantity box does not yank the caret out of it. */
-  function refreshTotals() {
+  function refreshTotals(side) {
+    var body = side.body, foot = side.foot, note = side.note;
     var askTotal = 0, soldTotal = 0, maxTotal = 0;
     var subbed = 0, noSold = 0, neither = 0, cards = 0;
     var trs = body.querySelectorAll("tr");
-    deckRows.forEach(function (r, i) {
+    side.rows.forEach(function (r, i) {
       var ask      = askOf(r.e);
       var lineAsk  = ask       == null ? null : ask       * r.q;
       var lineSold = r.e.avg   == null ? null : r.e.avg   * r.q;
@@ -36933,7 +37053,8 @@ var deckRows = [];
       if (tds[7]) tds[7].innerHTML = lineMax  == null ? '<span class="dim">-</span>' : money(lineMax);
     });
 
-    foot.innerHTML = deckRows.length
+    side.totals = { ask: askTotal, sold: soldTotal, max: maxTotal, cards: cards };
+    foot.innerHTML = side.rows.length
       ? '<tr><td class="deck__lbl" colspan="5">' + cards +
         (cards === 1 ? " card" : " cards") + ' &middot; totals</td>' +
         '<td class="deck__tot">' + money(askTotal) + '</td>' +
@@ -36951,16 +37072,36 @@ var deckRows = [];
     if (note) note.textContent = bits.join("; ");
   }
 
-  function renderDeck() {
-    if (!deckRows.length) {
+  /* A manual row is a slab: the board has no graded prices, so its value is
+     typed in and stands for ask, sold and max alike. It carries no product id,
+     so it has no art and no chart - just the number the trader agreed. */
+  function isManual(r) { return !!(r.e && r.e.manual); }
+
+  function renderSide(side) {
+    var rows = side.rows, body = side.body, foot = side.foot;
+    if (!body) return;
+    if (!rows.length) {
       body.innerHTML = '<tr><td colspan="9" class="emptynote">' +
-        'Nothing added yet. Type a card name above to start a list.</td></tr>';
+        (side.empty || 'Nothing added yet. Type a card name above to start a list.') + '</td></tr>';
       foot.innerHTML = "";
-      if (note) note.textContent = "";
+      if (side.note) side.note.textContent = "";
+      refreshTotals(side);
       return;
     }
-    body.innerHTML = deckRows.map(function (r, i) {
+    body.innerHTML = rows.map(function (r, i) {
       var e = r.e;
+      if (e.manual) {
+        return '<tr>' +
+          '<td class="thumb"></td>' +
+          '<td><input class="deck__qty" type="number" min="1" max="999" value="' + r.q +
+            '" data-i="' + i + '" aria-label="Quantity"></td>' +
+          '<td class="card ind">' + esc(e.n) + '<span class="rar">slab &middot; entered by hand</span></td>' +
+          '<td class="n">' + money(e.a) + '<span class="deck__sub">manual</span></td>' +
+          '<td class="n"><span class="dim">-</span></td>' +
+          '<td class="n big"></td><td class="n big"></td><td class="n big deck__max"></td>' +
+          '<td><button class="deck__x" data-del="' + i + '" aria-label="Remove">&times;</button></td>' +
+        '</tr>';
+      }
       return '<tr>' +
         '<td class="thumb"><img loading="lazy" alt="" onerror=\'this.style.display="none"\' src="https://tcgplayer-cdn.tcgplayer.com/product/' + e.id + '_200w.jpg"></td>' +
         '<td><input class="deck__qty" type="number" min="1" max="999" value="' + r.q +
@@ -36984,8 +37125,42 @@ var deckRows = [];
         '<td><button class="deck__x" data-del="' + i + '" aria-label="Remove">&times;</button></td>' +
       '</tr>';
     }).join("");
-    refreshTotals();
+    refreshTotals(side);
   }
+
+  /* The comparison is shown on all three bases rather than picking one for
+     you: a trade can be even by ask and lopsided by what the cards actually
+     sell for, and that disagreement is the thing worth seeing. */
+  function renderTradeSummary() {
+    var host = el("tradesum");
+    if (!host) return;
+    if (!tradeOn) { host.innerHTML = ""; return; }
+    var a = sideA.totals || { ask: 0, sold: 0, max: 0 };
+    var b = sideB.totals || { ask: 0, sold: 0, max: 0 };
+    var rows = [["Asking", a.ask + sideA.cash, b.ask + sideB.cash],
+                ["Sold avg", a.sold + sideA.cash, b.sold + sideB.cash],
+                ["Max", a.max + sideA.cash, b.max + sideB.cash]];
+    host.innerHTML =
+      '<div class="trade__title">Trade</div>' +
+      '<table class="trade__t"><thead><tr><th></th><th>Yours</th><th>Theirs</th>' +
+      '<th>Difference</th></tr></thead><tbody>' +
+      rows.map(function (r) {
+        var d = r[1] - r[2];
+        var who = Math.abs(d) < 0.005 ? "even"
+                : (d > 0 ? "you give " + money(d) : "you receive " + money(-d));
+        var cls = Math.abs(d) < 0.005 ? "even" : (d > 0 ? "out" : "in");
+        return '<tr><td class="trade__lbl">' + r[0] + '</td>' +
+               '<td class="n">' + money(r[1]) + '</td>' +
+               '<td class="n">' + money(r[2]) + '</td>' +
+               '<td class="n trade__d ' + cls + '">' + who + '</td></tr>';
+      }).join("") + '</tbody></table>' +
+      ((sideA.cash || sideB.cash)
+        ? '<div class="trade__note">includes cash: yours ' + money(sideA.cash) +
+          ', theirs ' + money(sideB.cash) + '</div>'
+        : '');
+  }
+
+  function renderDeck() { renderSide(sideA); if (tradeOn) renderSide(sideB); renderTradeSummary(); }
 
   box.addEventListener("input", function () {
     matches = search(box.value);
@@ -37020,28 +37195,14 @@ var deckRows = [];
     if (!box.contains(ev.target) && !sug.contains(ev.target)) closeSuggest();
   });
 
-  body.addEventListener("input", function (ev) {
-    var t = ev.target;
-    if (!t || !t.className || t.className.indexOf("deck__qty") < 0) return;
-    var i = +t.getAttribute("data-i"), v = parseInt(t.value, 10);
-    if (!(v > 0)) v = 1;
-    if (v > 999) v = 999;
-    if (!deckRows[i]) return;
-    deckRows[i].q = v;
-    refreshTotals();
-  });
-
-  body.addEventListener("click", function (ev) {
-    var t = ev.target;
-    if (!t || !t.getAttribute) return;
-    var del = t.getAttribute("data-del");
-    if (del === null) return;
-    deckRows.splice(+del, 1);
-    renderDeck();
-  });
+  /* side A uses the same per-side wiring as side B; its own copy called
+     refreshTotals() with no argument, which stopped working the moment totals
+     became per-side - quantities silently stopped updating. */
+  wireRows(sideA);
 
   if (clear) clear.addEventListener("click", function () {
     deckRows = [];
+    sideA.rows = deckRows;
     box.value = "";
     matches = [];
     closeSuggest();
@@ -37146,7 +37307,11 @@ var deckRows = [];
       rows.push({ e: e, q: (q > 0 && q < 1000) ? q : 1 });
     });
 
-    deckRows = rows;                      /* replaces whatever was in the builder */
+    /* Assign through the side as well: sideA.rows holds a reference to the
+       same array, and rebinding only the global would leave the side pointing
+       at the old one - the list would look loaded and price the previous deck. */
+    deckRows = rows;
+    sideA.rows = rows;
     renderDeck();
     renderSaved(missing
       ? '"' + entry.name + '" loaded - ' + missing + (missing === 1 ? " card is" : " cards are") +
@@ -37177,6 +37342,121 @@ var deckRows = [];
     var l = t.getAttribute("data-load"), d = t.getAttribute("data-drop");
     if (l !== null) loadDeck(+l);
     else if (d !== null) dropDeck(+d);
+  });
+
+  /* Side B reuses the same suggestion machinery; `matches` and `active` are
+     per-side so typing on one does not hijack the other's list. */
+  function wirePicker(side) {
+    if (!side.box || !side.sug) return;
+    var m = [], act = -1;
+    function draw() {
+      if (!m.length) {
+        side.sug.innerHTML = '<div class="deck__none">No card matches that name.</div>';
+      } else {
+        side.sug.innerHTML = m.map(function (e, i) {
+          return '<div class="deck__opt' + (i === act ? " is-active" : "") + '" role="option" ' +
+            'data-i="' + i + '"><b>' + esc(e.n) + '</b><span>' + esc(e.section) +
+            ' &middot; ' + esc(e.set) + '</span><em>' +
+            (e.a == null ? "no ask" : money(e.a)) + '</em></div>';
+        }).join("");
+      }
+      side.sug.className = "deck__suggest on";
+    }
+    function close() { side.sug.className = "deck__suggest"; side.sug.innerHTML = ""; act = -1; }
+    side.box.addEventListener("input", function () {
+      m = search(side.box.value); act = m.length ? 0 : -1;
+      if (side.box.value.trim()) draw(); else close();
+    });
+    side.box.addEventListener("keydown", function (ev) {
+      if (ev.key === "Escape") { close(); return; }
+      if (!m.length) return;
+      if (ev.key === "ArrowDown") { act = (act + 1) % m.length; draw(); ev.preventDefault(); }
+      else if (ev.key === "ArrowUp") { act = (act - 1 + m.length) % m.length; draw(); ev.preventDefault(); }
+      else if (ev.key === "Enter") {
+        if (act >= 0) { addCard(m[act], side); side.box.value = ""; m = []; close(); }
+        ev.preventDefault();
+      }
+    });
+    side.sug.addEventListener("mousedown", function (ev) {
+      var opt = ev.target && ev.target.closest ? ev.target.closest(".deck__opt") : null;
+      if (!opt) return;
+      ev.preventDefault();
+      addCard(m[+opt.getAttribute("data-i")], side);
+      side.box.value = ""; m = []; close();
+    });
+    document.addEventListener("click", function (ev) {
+      if (!side.box.contains(ev.target) && !side.sug.contains(ev.target)) close();
+    });
+  }
+  wirePicker(sideB);
+
+  /* qty and remove, for whichever side the row belongs to */
+  function wireRows(side) {
+    if (!side.body) return;
+    side.body.addEventListener("input", function (ev) {
+      var t = ev.target;
+      if (!t || !t.className || String(t.className).indexOf("deck__qty") < 0) return;
+      var i = +t.getAttribute("data-i"), v = parseInt(t.value, 10);
+      if (!(v > 0)) v = 1;
+      if (v > 999) v = 999;
+      if (!side.rows[i]) return;
+      side.rows[i].q = v;
+      refreshTotals(side);
+      renderTradeSummary();
+    });
+    side.body.addEventListener("click", function (ev) {
+      var t = ev.target;
+      if (!t || !t.getAttribute) return;
+      var del = t.getAttribute("data-del");
+      if (del === null) return;
+      side.rows.splice(+del, 1);
+      renderDeck();
+    });
+  }
+  wireRows(sideB);
+
+  function wireCash(side, id) {
+    var inp = el(id);
+    if (!inp) return;
+    inp.addEventListener("input", function () {
+      var v = parseFloat(inp.value);
+      side.cash = (v > 0) ? Math.round(v * 100) / 100 : 0;
+      renderTradeSummary();
+    });
+  }
+  wireCash(sideA, "cashA");
+  wireCash(sideB, "cashB");
+
+  function wireSlab(side, nameId, valId, btnId) {
+    var b = el(btnId), n = el(nameId), v = el(valId);
+    if (!b || !n || !v) return;
+    var go = function () {
+      if (addSlab(side, n.value.trim(), v.value)) { n.value = ""; v.value = ""; n.focus(); }
+    };
+    b.addEventListener("click", go);
+    [n, v].forEach(function (i) {
+      i.addEventListener("keydown", function (ev) { if (ev.key === "Enter") { ev.preventDefault(); go(); } });
+    });
+  }
+  wireSlab(sideA, "slabAname", "slabAval", "slabAadd");
+  wireSlab(sideB, "slabBname", "slabBval", "slabBadd");
+
+  var tradeBtn = el("tradeToggle");
+  if (tradeBtn) tradeBtn.addEventListener("click", function () {
+    tradeOn = !tradeOn;
+    el("sideB").style.display = tradeOn ? "" : "none";
+    el("sideAhead").style.display = tradeOn ? "" : "none";
+    el("sideAextras").style.display = tradeOn ? "" : "none";
+    tradeBtn.textContent = tradeOn ? "Close trade side" : "Add a trade side";
+    tradeBtn.classList.toggle("is-on", tradeOn);
+    renderDeck();
+  });
+
+  var tradeClearBtn = el("tradeClear");
+  if (tradeClearBtn) tradeClearBtn.addEventListener("click", function () {
+    sideB.rows = []; sideB.cash = 0;
+    if (el("cashB")) el("cashB").value = "";
+    renderDeck();
   });
 
   window.__renderDeck = renderDeck;

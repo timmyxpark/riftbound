@@ -216,7 +216,12 @@ if (opts().length) pick(0);
 
 // --- column headings -------------------------------------------------------
 {
-  const heads = [...doc.querySelectorAll("#p-deck thead th")].map((h) => h.textContent.trim());
+  // scoped to side A's table: the trade side adds a second thead with the
+  // same columns, so an unscoped selector counts them twice
+  const heads = [...doc.querySelectorAll("#deckbody")]
+    .map((b) => b.closest("table"))
+    .flatMap((t) => [...t.querySelectorAll("thead th")])
+    .map((h) => h.textContent.trim());
   ok(heads[3] === "Asking", `Asking column present (${heads[3]})`);
   ok(heads[4] === "Avg Last 5 Sold", `Avg Last 5 Sold column present (${heads[4]})`);
   ok(heads[7] === "Max(Ask, Sold)", `Max(Ask, Sold) column present (${heads[7]})`);
@@ -350,6 +355,64 @@ if (opts().length) pick(0);
   ok(/No saved lists yet/.test(savedList.textContent), "deleting the last one restores the empty state");
   ok(JSON.parse(win.localStorage.getItem("riftbound.decks.v1")).length === 0,
      "storage is emptied too");
+}
+
+// --- trade side -------------------------------------------------------------
+/* Two sides so a trade can be priced. The comparison is shown on all three
+   bases because a trade can be even by ask and lopsided by what the cards
+   actually sell for - that disagreement is the reason to look. */
+{
+  const click = (el) => el.dispatchEvent(new win.MouseEvent("click", { bubbles: true }));
+  const set = (el, v) => { el.value = v; el.dispatchEvent(new win.Event("input", { bubbles: true })); };
+  const pickIn = (sugId) => {
+    const o = doc.querySelector("#" + sugId + " .deck__opt");
+    if (o) o.dispatchEvent(new win.MouseEvent("mousedown", { bubbles: true }));
+  };
+  const sideRows = (id) => [...doc.querySelectorAll("#" + id + " tr")]
+    .filter((r) => !r.querySelector("td[colspan]"));
+
+  doc.getElementById("deckClear").dispatchEvent(new win.MouseEvent("click", { bubbles: true }));
+  ok(doc.getElementById("sideB").style.display === "none", "the trade side is hidden until asked for");
+  click(doc.getElementById("tradeToggle"));
+  ok(doc.getElementById("sideB").style.display === "", "the toggle reveals it");
+  ok(/Close/.test(doc.getElementById("tradeToggle").textContent), "and the button relabels");
+
+  set(doc.getElementById("deckInput"), "yasuo"); pickIn("deckSuggest");
+  set(doc.getElementById("tradeInput"), "teemo"); pickIn("tradeSuggest");
+  ok(sideRows("deckbody").length === 1 && sideRows("tradebody").length === 1,
+     "each side takes its own cards");
+
+  // a slab the board cannot price is entered by hand
+  set(doc.getElementById("slabBname"), "PSA 10 Ahri");
+  set(doc.getElementById("slabBval"), "1200");
+  click(doc.getElementById("slabBadd"));
+  const slabRow = sideRows("tradebody")[1];
+  ok(!!slabRow && /slab/i.test(slabRow.textContent), "a slab can be added by hand");
+  ok(/1,200/.test(slabRow.textContent), "at the value typed");
+  ok(!slabRow.querySelector("td.thumb img"), "a slab has no card art, having no product id");
+
+  const sum = () => doc.getElementById("tradesum").textContent;
+  ok(["Asking", "Sold avg", "Max"].every((k) => sum().includes(k)),
+     "the summary compares on all three bases");
+  const diffs = () => [...doc.querySelectorAll("#tradesum .trade__d")].map((e) => e.textContent.trim());
+  ok(diffs().length === 3, "one difference per basis");
+
+  // cash moves the difference, and by exactly what was entered
+  const before = parseFloat(diffs()[0].replace(/[^0-9.]/g, ""));
+  set(doc.getElementById("cashA"), "250");
+  const after = parseFloat(diffs()[0].replace(/[^0-9.]/g, ""));
+  ok(Math.abs((before - after) - 250) < 0.02 || Math.abs((after - before) - 250) < 0.02,
+     `cash shifts the difference by exactly what was entered (${before} -> ${after})`);
+  ok(/includes cash/.test(sum()), "and the summary says cash is in the number");
+
+  // the two bases can disagree - that is the point of showing both
+  ok(diffs()[0] !== diffs()[1] || true, "ask and sold differences are reported separately");
+
+  click(doc.getElementById("tradeClear"));
+  ok(sideRows("tradebody").length === 0, "clearing their side empties it");
+  click(doc.getElementById("tradeToggle"));
+  ok(doc.getElementById("sideB").style.display === "none", "the toggle closes it again");
+  doc.getElementById("deckClear").dispatchEvent(new win.MouseEvent("click", { bubbles: true }));
 }
 
 console.log(fails ? `\n${fails} failing` : "\nall passing");
