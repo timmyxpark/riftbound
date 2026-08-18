@@ -531,14 +531,32 @@
     border: 1px solid var(--grid2); border-radius: 5px; padding: 3px 2px;
   }
   .deck__qty:focus { outline: none; border-color: var(--peri); box-shadow: 0 0 0 2px var(--peribg); }
+  .deck__comp {
+    font-family: "Inter", system-ui, sans-serif; font-size: 11.5px; color: var(--ink);
+    background: var(--card); border: 1px solid var(--grid2); border-radius: 5px;
+    padding: 3px 4px; outline: none;
+  }
+  .deck__pct {
+    width: 56px; font-family: var(--mono); font-size: 12px; text-align: center;
+    color: var(--ink); background: var(--card); font-variant-numeric: tabular-nums;
+    border: 1px solid var(--grid2); border-radius: 5px; padding: 3px 2px;
+  }
+  .deck__comp:focus, .deck__pct:focus {
+    border-color: var(--peri); box-shadow: 0 0 0 2px var(--peribg);
+  }
+  /* the comped value is the number the summary is built from, so it leads */
+  .deck__val { color: var(--ink); font-weight: 700; }
+  .deck__tot.comp { color: var(--ink); }
   .deck__x { border: 0; background: none; cursor: pointer; color: var(--faint);
              font-size: 15px; line-height: 1; padding: 0 5px; }
   .deck__x:hover { color: var(--rose); }
   .deck__x:focus-visible { outline: 2px solid #8FA0DC; outline-offset: 2px; }
 
   #deckfoot td { border-top: 2px solid var(--grid2); background: #1E2430; padding: 11px 10px; }
+  /* The right padding keeps the label off the first total. Without it a long
+     label in a narrow trade-mode table butts straight against the number. */
   .deck__lbl { text-align: right; font-size: 10px; font-weight: 600; letter-spacing: 0.07em;
-               text-transform: uppercase; color: var(--faint); }
+               text-transform: uppercase; color: var(--faint); padding-right: 12px; }
   /* Sold totals take the same green the market line uses everywhere else, and
      Max gets the deep blue the tabs and set banners use - it is the headline
      number, so it reads strongest without a background tint that would have to
@@ -580,7 +598,11 @@
   .deck__sides.is-trade thead th:nth-child(4),
   .deck__sides.is-trade tbody td:nth-child(4),
   .deck__sides.is-trade thead th:nth-child(5),
-  .deck__sides.is-trade tbody td:nth-child(5) {
+  .deck__sides.is-trade tbody td:nth-child(5),
+  .deck__sides.is-trade thead th:nth-child(6),
+  .deck__sides.is-trade tbody td:nth-child(6),
+  .deck__sides.is-trade thead th:nth-child(7),
+  .deck__sides.is-trade tbody td:nth-child(7) {
     display: none;
   }
   .deck__sides.is-trade td.card { min-width: 128px; }
@@ -986,7 +1008,8 @@
                 <thead>
                   <tr>
                     <th></th><th>Qty</th><th>Card</th><th>Asking</th><th>Avg Last 5 Sold</th>
-                    <th>Ask total</th><th>Sold total</th><th>Max(Ask, Sold)</th><th></th>
+                    <th>Ask total</th><th>Sold total</th><th>Max(Ask, Sold)</th>
+                    <th>Comp</th><th>%</th><th>Value</th><th></th>
                   </tr>
                 </thead>
                 <tbody id="deckbody"></tbody>
@@ -995,9 +1018,10 @@
             </div>
           </div>
           <div class="side__extras" id="sideAextras">
-            <label class="side__cash">Cash
-              <input type="number" id="cashA" min="0" step="1" placeholder="0" aria-label="Cash on your side">
-            </label>
+            <span class="side__slab">
+              <input type="number" id="cashA" min="0" step="1" placeholder="cash" aria-label="Cash on your side">
+              <button class="chip" id="cashAadd">Add cash</button>
+            </span>
             <span class="side__slab">
               <input type="text" id="slabAname" placeholder="Slab, e.g. PSA 10 Yasuo" aria-label="Slab description">
               <input type="number" id="slabAval" min="0" step="1" placeholder="value" aria-label="Slab value">
@@ -1024,7 +1048,7 @@
                   <thead>
                     <tr>
                       <th></th><th>Qty</th><th>Card</th><th>Asking</th><th>Avg Last 5 Sold</th>
-                      <th>Ask total</th><th>Sold total</th><th>Max(Ask, Sold)</th><th></th>
+                      <th>Ask total</th><th>Sold total</th><th>Max(Ask, Sold)</th><th>Comp</th><th>%</th><th>Value</th><th></th>
                     </tr>
                   </thead>
                   <tbody id="tradebody"></tbody>
@@ -1033,9 +1057,10 @@
               </div>
             </div>
             <div class="side__extras">
-              <label class="side__cash">Cash
-                <input type="number" id="cashB" min="0" step="1" placeholder="0" aria-label="Cash on their side">
-              </label>
+              <span class="side__slab">
+                <input type="number" id="cashB" min="0" step="1" placeholder="cash" aria-label="Cash on their side">
+                <button class="chip" id="cashBadd">Add cash</button>
+              </span>
               <span class="side__slab">
                 <input type="text" id="slabBname" placeholder="Slab, e.g. BGS 9.5 Ahri" aria-label="Slab description">
                 <input type="number" id="slabBval" min="0" step="1" placeholder="value" aria-label="Slab value">
@@ -2280,7 +2305,7 @@ var deckRows = [];
         side.rows[i].q += 1; renderDeck(); return;
       }
     }
-    side.rows.push({ e: e, q: 1 });
+    side.rows.push({ e: e, q: 1, comp: "max", pct: 100 });
     renderDeck();
   }
 
@@ -2291,17 +2316,31 @@ var deckRows = [];
     if (!name || !(v > 0)) return false;
     side.rows.push({ e: { manual: true, id: "slab-" + (++slabSeq), n: name,
                           a: Math.round(v * 100) / 100, avg: Math.round(v * 100) / 100,
-                          nSales: 0, odd: null }, q: 1 });
+                          nSales: 0, odd: null }, q: 1, comp: "max", pct: 100 });
     renderDeck();
     return true;
   }
   var slabSeq = 0;
 
+  /* Cash sits in the table as a row rather than in a field beside it: on a
+     trade it is one of the things being exchanged, and it should total and
+     comp like everything else. Its three bases are the same number. */
+  function addCash(side, value) {
+    var v = parseFloat(value);
+    if (!(v > 0)) return false;
+    v = Math.round(v * 100) / 100;
+    side.rows.push({ e: { manual: true, isCash: true, id: "cash-" + (++slabSeq),
+                          n: money(v) + " cash", a: v, avg: v, nSales: 0, odd: null },
+                     q: 1, comp: "max", pct: 100 });
+    renderDeck();
+    return true;
+  }
+
   /* Totals are recomputed in place rather than by re-rendering the tbody, so
      typing in a quantity box does not yank the caret out of it. */
   function refreshTotals(side) {
     var body = side.body, foot = side.foot, note = side.note;
-    var askTotal = 0, soldTotal = 0, maxTotal = 0;
+    var askTotal = 0, soldTotal = 0, maxTotal = 0, compTotal = 0;
     var subbed = 0, noSold = 0, neither = 0, cards = 0;
     var trs = body.querySelectorAll("tr");
     side.rows.forEach(function (r, i) {
@@ -2325,28 +2364,26 @@ var deckRows = [];
       if (tds[5]) tds[5].innerHTML = lineAsk  == null ? '<span class="dim">-</span>' : money(lineAsk);
       if (tds[6]) tds[6].innerHTML = lineSold == null ? '<span class="dim">-</span>' : money(lineSold);
       if (tds[7]) tds[7].innerHTML = lineMax  == null ? '<span class="dim">-</span>' : money(lineMax);
+      var cv = compValue(r);
+      compTotal += (cv == null ? 0 : cv);
+      if (tds[10]) tds[10].innerHTML = cv == null ? '<span class="dim">-</span>' : money(cv);
     });
 
-    side.totals = { ask: askTotal, sold: soldTotal, max: maxTotal, cards: cards };
+    side.totals = { ask: askTotal, sold: soldTotal, max: maxTotal,
+                    comp: compTotal, cards: cards };
     foot.innerHTML = side.rows.length
       /* The label spans everything before the three totals. Two columns stand
          down in trade mode, so a fixed span would swallow the Max total. */
       ? '<tr><td class="deck__lbl" colspan="' + (tradeOn ? 3 : 5) + '">' + cards +
         (cards === 1 ? " card" : " cards") + ' &middot; totals</td>' +
-        '<td class="deck__tot">' + money(askTotal) + '</td>' +
-        '<td class="deck__tot sold">' + money(soldTotal) + '</td>' +
-        '<td class="deck__tot max">' + money(maxTotal) + '</td><td></td></tr>'
+        (tradeOn ? '' :
+          '<td class="deck__tot">' + money(askTotal) + '</td>' +
+          '<td class="deck__tot sold">' + money(soldTotal) + '</td>') +
+        '<td class="deck__tot max">' + money(maxTotal) + '</td>' +
+        '<td colspan="2"></td><td class="deck__tot comp">' + money(compTotal) + '</td><td></td></tr>'
       : "";
 
     var bits = [];
-    /* Without a trade side there is no summary to show cash in, so it is
-       stated here - otherwise typing into the cash box appears to do nothing. */
-    if (side.cash > 0) {
-      bits.push("plus " + money(side.cash) + " cash: " +
-                money(askTotal + side.cash) + " ask, " +
-                money(soldTotal + side.cash) + " sold, " +
-                money(maxTotal + side.cash) + " max");
-    }
     if (subbed)  bits.push(subbed  + (subbed  === 1 ? " copy has"  : " copies have") +
                            " nothing listed, so its ask falls back to its sold average");
     if (noSold)  bits.push(noSold  + (noSold  === 1 ? " copy has"  : " copies have") +
@@ -2361,11 +2398,45 @@ var deckRows = [];
      so it has no art and no chart - just the number the trader agreed. */
   function isManual(r) { return !!(r.e && r.e.manual); }
 
+  /* Each row picks the basis it is comped at and a percentage to shade it by,
+     because a trade is negotiated line by line - "your Yasuo at 90% of ask"
+     is a real sentence. Cash and slabs carry one number, so every basis is
+     the same for them. */
+  var COMPS = ["ask", "sold", "max"];
+  function compBase(r) {
+    var e = r.e;
+    var ask = askOf(e), sold = (e.avg == null ? null : e.avg);
+    if (r.comp === "ask")  return ask;
+    if (r.comp === "sold") return sold;
+    if (ask == null && sold == null) return null;
+    if (ask == null)  return sold;
+    if (sold == null) return ask;
+    return Math.max(ask, sold);
+  }
+  function compValue(r) {
+    var b = compBase(r);
+    if (b == null) return null;
+    var pct = (r.pct == null ? 100 : r.pct);
+    return Math.round(b * r.q * (pct / 100) * 100) / 100;
+  }
+
+  function compCells(r, i) {
+    var opts = COMPS.map(function (c) {
+      return '<option value="' + c + '"' + (r.comp === c ? " selected" : "") + '>' +
+             (c === "ask" ? "Ask" : c === "sold" ? "Sold" : "Max") + '</option>';
+    }).join("");
+    var v = compValue(r);
+    return '<td><select class="deck__comp" data-i="' + i + '" aria-label="Comp basis">' + opts + '</select></td>' +
+           '<td><input class="deck__pct" type="number" min="0" max="1000" step="5" value="' +
+             (r.pct == null ? 100 : r.pct) + '" data-i="' + i + '" aria-label="Percentage"></td>' +
+           '<td class="n big deck__val">' + (v == null ? '<span class="dim">-</span>' : money(v)) + '</td>';
+  }
+
   function renderSide(side) {
     var rows = side.rows, body = side.body, foot = side.foot;
     if (!body) return;
     if (!rows.length) {
-      body.innerHTML = '<tr><td colspan="9" class="emptynote">' +
+      body.innerHTML = '<tr><td colspan="12" class="emptynote">' +
         (side.empty || 'Nothing added yet. Type a card name above to start a list.') + '</td></tr>';
       foot.innerHTML = "";
       if (side.note) side.note.textContent = "";
@@ -2379,10 +2450,12 @@ var deckRows = [];
           '<td class="thumb"></td>' +
           '<td><input class="deck__qty" type="number" min="1" max="999" value="' + r.q +
             '" data-i="' + i + '" aria-label="Quantity"></td>' +
-          '<td class="card ind">' + esc(e.n) + '<span class="rar">slab &middot; entered by hand</span></td>' +
+          '<td class="card ind">' + esc(e.n) + '<span class="rar">' +
+            (e.isCash ? "cash" : "slab &middot; entered by hand") + '</span></td>' +
           '<td class="n">' + money(e.a) + '<span class="deck__sub">manual</span></td>' +
           '<td class="n"><span class="dim">-</span></td>' +
           '<td class="n big"></td><td class="n big"></td><td class="n big deck__max"></td>' +
+          compCells(r, i) +
           '<td><button class="deck__x" data-del="' + i + '" aria-label="Remove">&times;</button></td>' +
         '</tr>';
       }
@@ -2406,6 +2479,7 @@ var deckRows = [];
         '<td class="n big"></td>' +
         '<td class="n big"></td>' +
         '<td class="n big deck__max"></td>' +
+        compCells(r, i) +
         '<td><button class="deck__x" data-del="' + i + '" aria-label="Remove">&times;</button></td>' +
       '</tr>';
     }).join("");
@@ -2419,29 +2493,24 @@ var deckRows = [];
     var host = el("tradesum");
     if (!host) return;
     if (!tradeOn) { host.innerHTML = ""; return; }
-    var a = sideA.totals || { ask: 0, sold: 0, max: 0 };
-    var b = sideB.totals || { ask: 0, sold: 0, max: 0 };
-    var rows = [["Asking", a.ask + sideA.cash, b.ask + sideB.cash],
-                ["Sold avg", a.sold + sideA.cash, b.sold + sideB.cash],
-                ["Max", a.max + sideA.cash, b.max + sideB.cash]];
+    var a = (sideA.totals || {}).comp || 0;
+    var b = (sideB.totals || {}).comp || 0;
+    var d = a - b;
+    var who = Math.abs(d) < 0.005 ? "even"
+            : (d > 0 ? "you give " + money(d) : "you receive " + money(-d));
+    var cls = Math.abs(d) < 0.005 ? "even" : (d > 0 ? "out" : "in");
     host.innerHTML =
-      '<div class="trade__title">Trade</div>' +
+      '<div class="trade__title">Trade &middot; comped value</div>' +
       '<table class="trade__t"><thead><tr><th></th><th>Yours</th><th>Theirs</th>' +
       '<th>Difference</th></tr></thead><tbody>' +
-      rows.map(function (r) {
-        var d = r[1] - r[2];
-        var who = Math.abs(d) < 0.005 ? "even"
-                : (d > 0 ? "you give " + money(d) : "you receive " + money(-d));
-        var cls = Math.abs(d) < 0.005 ? "even" : (d > 0 ? "out" : "in");
-        return '<tr><td class="trade__lbl">' + r[0] + '</td>' +
-               '<td class="n">' + money(r[1]) + '</td>' +
-               '<td class="n">' + money(r[2]) + '</td>' +
-               '<td class="n trade__d ' + cls + '">' + who + '</td></tr>';
-      }).join("") + '</tbody></table>' +
-      ((sideA.cash || sideB.cash)
-        ? '<div class="trade__note">includes cash: yours ' + money(sideA.cash) +
-          ', theirs ' + money(sideB.cash) + '</div>'
-        : '');
+      '<tr><td class="trade__lbl">Comp</td>' +
+      '<td class="n">' + money(a) + '</td>' +
+      '<td class="n">' + money(b) + '</td>' +
+      '<td class="n trade__d ' + cls + '">' + who + '</td></tr>' +
+      '</tbody></table>' +
+      '<div class="trade__note">Each row is comped at the basis and percentage ' +
+      'set on it, so this is the only comparison shown - the per-basis columns ' +
+      'above are what those choices are made from.</div>';
   }
 
   function renderDeck() { renderSide(sideA); if (tradeOn) renderSide(sideB); renderTradeSummary(); }
@@ -2679,12 +2748,32 @@ var deckRows = [];
     if (!side.body) return;
     side.body.addEventListener("input", function (ev) {
       var t = ev.target;
-      if (!t || !t.className || String(t.className).indexOf("deck__qty") < 0) return;
+      var cn = String(t && t.className || "");
+      if (cn.indexOf("deck__pct") > -1) {
+        var pi = +t.getAttribute("data-i"), pv = parseFloat(t.value);
+        if (!side.rows[pi]) return;
+        /* blank or nonsense reads as 100%, not as zero - an empty box should
+           not silently value a row at nothing */
+        side.rows[pi].pct = (pv >= 0 && pv <= 1000) ? pv : 100;
+        refreshTotals(side);
+        renderTradeSummary();
+        return;
+      }
+      if (cn.indexOf("deck__qty") < 0) return;
       var i = +t.getAttribute("data-i"), v = parseInt(t.value, 10);
       if (!(v > 0)) v = 1;
       if (v > 999) v = 999;
       if (!side.rows[i]) return;
       side.rows[i].q = v;
+      refreshTotals(side);
+      renderTradeSummary();
+    });
+    side.body.addEventListener("change", function (ev) {
+      var t = ev.target;
+      if (!t || !t.className || String(t.className).indexOf("deck__comp") < 0) return;
+      var i = +t.getAttribute("data-i");
+      if (!side.rows[i] || COMPS.indexOf(t.value) < 0) return;
+      side.rows[i].comp = t.value;
       refreshTotals(side);
       renderTradeSummary();
     });
@@ -2699,18 +2788,15 @@ var deckRows = [];
   }
   wireRows(sideB);
 
-  function wireCash(side, id) {
-    var inp = el(id);
-    if (!inp) return;
-    inp.addEventListener("input", function () {
-      var v = parseFloat(inp.value);
-      side.cash = (v > 0) ? Math.round(v * 100) / 100 : 0;
-      refreshTotals(side);
-      renderTradeSummary();
+  function wireCash(side, inputId, btnId) {
+    var inp = el(inputId), b = el(btnId);
+    if (!inp || !b) return;
+    var go = function () { if (addCash(side, inp.value)) { inp.value = ""; inp.focus(); } };
+    b.addEventListener("click", go);
+    inp.addEventListener("keydown", function (ev) {
+      if (ev.key === "Enter") { ev.preventDefault(); go(); }
     });
   }
-  wireCash(sideA, "cashA");
-  wireCash(sideB, "cashB");
 
   function wireSlab(side, nameId, valId, btnId) {
     var b = el(btnId), n = el(nameId), v = el(valId);
@@ -2725,6 +2811,8 @@ var deckRows = [];
   }
   wireSlab(sideA, "slabAname", "slabAval", "slabAadd");
   wireSlab(sideB, "slabBname", "slabBval", "slabBadd");
+  wireCash(sideA, "cashA", "cashAadd");
+  wireCash(sideB, "cashB", "cashBadd");
 
   var tradeBtn = el("tradeToggle");
   if (tradeBtn) tradeBtn.addEventListener("click", function () {

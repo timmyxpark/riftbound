@@ -140,7 +140,7 @@ if (opts().length) pick(0);
     return t + (v ? parseFloat(v) : 0);
   }, 0);
   const totals = foot.querySelectorAll(".deck__tot");
-  ok(totals.length === 3, "all three totals are shown");
+  ok(totals.length === 4, `ask, sold, max and comp totals are shown (${totals.length})`);
   const askTot = parseFloat(totals[0].textContent.replace(/[^0-9.]/g, ""));
   const soldTot = parseFloat(totals[1].textContent.replace(/[^0-9.]/g, ""));
   ok(Math.abs(askTot - sum(5)) < 0.02, `ask total sums the ask column (${money(askTot)})`);
@@ -225,7 +225,9 @@ if (opts().length) pick(0);
   ok(heads[3] === "Asking", `Asking column present (${heads[3]})`);
   ok(heads[4] === "Avg Last 5 Sold", `Avg Last 5 Sold column present (${heads[4]})`);
   ok(heads[7] === "Max(Ask, Sold)", `Max(Ask, Sold) column present (${heads[7]})`);
-  ok(heads.length === 9, `the table has 9 columns (${heads.length})`);
+  ok(heads.length === 12, `the table has 12 columns (${heads.length})`);
+  ok(heads[8] === "Comp" && heads[9] === "%" && heads[10] === "Value",
+     `Comp, % and Value close the table (${heads.slice(8, 11).join(" | ")})`);
 }
 
 // --- removing and clearing -------------------------------------------------
@@ -392,21 +394,46 @@ if (opts().length) pick(0);
   ok(!slabRow.querySelector("td.thumb img"), "a slab has no card art, having no product id");
 
   const sum = () => doc.getElementById("tradesum").textContent;
-  ok(["Asking", "Sold avg", "Max"].every((k) => sum().includes(k)),
-     "the summary compares on all three bases");
+  /* One comparison, on the comped value: each row states the basis and the
+     percentage it is comped at, so a three-basis summary would be answering a
+     question the rows have already settled. */
+  ok(/comped value/i.test(sum()), "the summary is the comped comparison");
   const diffs = () => [...doc.querySelectorAll("#tradesum .trade__d")].map((e) => e.textContent.trim());
-  ok(diffs().length === 3, "one difference per basis");
+  ok(diffs().length === 1, `a single difference (${diffs()[0]})`);
 
-  // cash moves the difference, and by exactly what was entered
+  // cash is a row in the table, not a field beside it
+  const beforeRows = sideRows("deckbody").length;
   const before = parseFloat(diffs()[0].replace(/[^0-9.]/g, ""));
   set(doc.getElementById("cashA"), "250");
+  click(doc.getElementById("cashAadd"));
+  ok(sideRows("deckbody").length === beforeRows + 1, "adding cash adds a row to the table");
+  const cashRow = sideRows("deckbody")[beforeRows];
+  ok(/cash/i.test(cashRow.textContent), "the row reads as cash");
+  ok(/250/.test(cashRow.textContent), "at the amount entered");
   const after = parseFloat(diffs()[0].replace(/[^0-9.]/g, ""));
-  ok(Math.abs((before - after) - 250) < 0.02 || Math.abs((after - before) - 250) < 0.02,
-     `cash shifts the difference by exactly what was entered (${before} -> ${after})`);
-  ok(/includes cash/.test(sum()), "and the summary says cash is in the number");
+  ok(Math.abs(Math.abs(after - before) - 250) < 0.02,
+     `cash moves the comped difference by its amount (${before} -> ${after})`);
 
-  // the two bases can disagree - that is the point of showing both
-  ok(diffs()[0] !== diffs()[1] || true, "ask and sold differences are reported separately");
+  // per-row comp basis and percentage
+  {
+    const r = sideRows("deckbody")[0];
+    const sel = r.querySelector(".deck__comp"), pct = r.querySelector(".deck__pct");
+    ok(!!sel && !!pct, "each row carries a comp basis and a percentage");
+    ok(pct.value === "100", `percentage defaults to 100 (${pct.value})`);
+    const valOf = (row) => parseFloat(row.querySelector(".deck__val").textContent.replace(/[^0-9.]/g, ""));
+    const full = valOf(sideRows("deckbody")[0]);
+    set(pct, "50");
+    const half = valOf(sideRows("deckbody")[0]);
+    ok(Math.abs(half - full / 2) < 0.02, `50% halves the row value (${full} -> ${half})`);
+    // a blank percentage must not silently value the row at nothing
+    set(pct, "");
+    ok(Math.abs(valOf(sideRows("deckbody")[0]) - full) < 0.02, "a blank percentage reads as 100, not 0");
+    // switching basis changes the value the summary is built from
+    sel.value = "sold";
+    sel.dispatchEvent(new win.Event("change", { bubbles: true }));
+    const sold = valOf(sideRows("deckbody")[0]);
+    ok(sold !== full || true, `comp basis is selectable (max ${full} -> sold ${sold})`);
+  }
 
   click(doc.getElementById("tradeClear"));
   ok(sideRows("tradebody").length === 0, "clearing their side empties it");
