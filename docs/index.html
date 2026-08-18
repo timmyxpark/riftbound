@@ -15,22 +15,22 @@
 
 <style>
   :root {
-    --bg: #F7F8FC;
-    --card: #FFFFFF;
-    --ink: #3D4652;
-    --soft: #7A8697;
-    --faint: #A3ADBC;
-    --grid: #E7EAF2;
-    --grid2: #D6DBE8;
+    --bg: #11141B;
+    --card: #191E28;
+    --ink: #E3E8F1;
+    --soft: #A7B2C6;
+    --faint: #7B879C;
+    --grid: #252C3A;
+    --grid2: #39425A;
 
-    --mint: #5FA98C;
-    --mintbg: #E4F2EB;
-    --rose: #C97B72;
-    --rosebg: #FAE7E4;
-    --butter: #A8894A;
-    --butterbg: #F7EFDC;
-    --peri: #7C8CC4;
-    --peribg: #E9ECF8;
+    --mint: #63C89A;
+    --mintbg: #16301F;
+    --rose: #E5897F;
+    --rosebg: #37201E;
+    --butter: #CBA95F;
+    --butterbg: #332A17;
+    --peri: #8FA0DC;
+    --peribg: #1F2740;
 
     --mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
   }
@@ -54,7 +54,10 @@
     align-items: center;
   }
 
-  .inner { width: 100%; max-width: 1080px; }
+  /* Full width: the tables are wide - nine columns on the deck pricer, six on
+     Playables - and a fixed 1080px column forced horizontal scrolling on
+     screens with room to spare. A little side padding keeps it off the edge. */
+  .inner { width: 100%; max-width: none; padding: 0 4px; }
 
   h1 { margin: 0; font-size: 20px; font-weight: 700; letter-spacing: -0.015em; text-align: center; }
   .when { margin: 4px 0 16px; font-size: 13px; color: var(--soft); text-align: center; }
@@ -76,7 +79,7 @@
     letter-spacing: 0.07em;
     text-transform: uppercase;
     color: var(--faint);
-    background: #FBFCFE;
+    background: #1E2430;
     padding: 8px 10px;
     border-bottom: 1px solid var(--grid2);
     border-right: 1px solid var(--grid);
@@ -94,7 +97,7 @@
   }
   tbody td:last-child { border-right: 0; }
   tbody tr:last-child td { border-bottom: 0; }
-  tbody tr:nth-child(even) td { background: #FCFDFF; }
+  tbody tr:nth-child(even) td { background: #1C212C; }
 
 
   .set { font-size: 13.5px; font-weight: 600; white-space: nowrap; width: 1%; }
@@ -138,14 +141,17 @@
     border-radius: 3px;
     cursor: default;
   }
-  .f2  { background: #D3EBE0; color: #3E8168; }
+  .f2  { background: #1B3A2A; color: #74C7A2; }
   .f1  { background: var(--mintbg); color: var(--mint); }
-  .f0  { background: #EEF0F5; color: var(--soft); }
+  .f0  { background: #262D3B; color: var(--soft); }
   .fm1 { background: var(--rosebg); color: var(--rose); }
-  .fm2 { background: #F3D6D1; color: #A65A50; }
+  .fm2 { background: #3A2320; color: #DE8C81; }
 
   .trend { width: 100%; min-width: 190px; }
-  .trend svg { display: block; width: 100%; height: auto; }
+  /* The charts scale to their column, and at full window width that made each
+     row about 470px tall - a lot of scrolling for four rows. Capped, so extra
+     width goes to the table rather than to ever-taller charts. */
+  .trend svg { display: block; width: 100%; height: auto; max-height: 170px; }
   .trend .cap { font-size: 9px; color: var(--faint); margin-top: 2px; text-align: center; }
 
   /* key for the five-element weekly charts */
@@ -153,7 +159,7 @@
   .ckey.on { display: flex; }
   .ckey i { display: inline-flex; align-items: center; gap: 5px; font-style: normal; }
   .ckey b { display: inline-block; width: 14px; height: 0; border-top-width: 2px; border-top-style: solid; }
-  .ckey .k-band { height: 8px; border: 1px solid #BFC7D6; background: rgba(214, 219, 232, 0.45); border-top: 0; }
+  .ckey .k-band { height: 8px; border: 1px solid #4C5875; background: rgba(90, 104, 140, 0.30); border-top: 0; }
 
   tr.soon td { color: var(--faint); }
   tr.soon .set { font-weight: 500; color: var(--faint); }
@@ -265,11 +271,11 @@
   .tl__key { display: flex; flex-wrap: wrap; gap: 4px; }
   .tl__key i { font-style: normal; font-size: 9px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; padding: 2px 7px; border-radius: 9px; }
 
-  .k-set   { background: #E4EAFA; color: #55679F; }
-  .k-comp  { background: #FCE7DF; color: #B26A4C; }
-  .k-prod  { background: #E9F0E1; color: #628049; }
-  .k-promo { background: #F6E4F0; color: #A2649A; }
-  .k-rule  { background: #EDEEF2; color: #77808F; }
+  .k-set   { background: #1F2740; color: #93A7E4; }
+  .k-comp  { background: #39241C; color: #E09B79; }
+  .k-prod  { background: #212C1B; color: #9DC47C; }
+  .k-promo { background: #332035; color: #D79ACD; }
+  .k-rule  { background: #242A37; color: #98A2B4; }
 
   .tl__month { display: grid; grid-template-columns: 62px 1fr; gap: 10px; padding: 7px 0; border-top: 1px solid var(--grid); }
   .tl__month:first-of-type { border-top: 0; }
@@ -284,7 +290,7 @@
   .tl__i.comp .dot  { background: #E0A98C; }
   .tl__i.prod .dot  { background: #A6C089; }
   .tl__i.promo .dot { background: #D3A0C6; }
-  .tl__i.rule .dot  { background: #B9BFC9; }
+  .tl__i.rule .dot  { background: #5C6577; }
   .tl__i b { font-weight: 600; color: var(--ink); }
   .tl__i em { font-style: normal; color: var(--soft); }
   .tl__i.past { opacity: 0.45; }
@@ -305,29 +311,29 @@
   .n.dim { color: var(--soft); font-size: 12.5px; }
 
   tbody tr.setrow td {
-    background: linear-gradient(180deg, #DDE4F2 0%, #D2DBEC 100%);
+    background: linear-gradient(180deg, #232C42 0%, #1D2537 100%);
     font-size: 17px;
     font-weight: 800;
     letter-spacing: 0.05em;
     text-transform: uppercase;
-    color: #33436B;
+    color: #A9BEF0;
     text-align: left;
     padding: 13px 14px;
-    border-top: 2px solid #A9B7D6;
-    border-bottom: 1px solid #BAC6E0;
+    border-top: 2px solid #4A5878;
+    border-bottom: 1px solid #3B4661;
   }
   tbody tr.setrow:first-child td { border-top: 0; }
   tbody tr.setrow td em {
     font-style: normal;
     font-size: 12px;
     font-weight: 500;
-    color: #6B7A9E;
+    color: #8493B8;
     letter-spacing: 0.04em;
     text-transform: uppercase;
     margin-left: 10px;
   }
   /* keep the zebra striping from tinting the banner */
-  tbody tr.setrow:nth-child(even) td { background: linear-gradient(180deg, #DDE4F2 0%, #D2DBEC 100%); }
+  tbody tr.setrow:nth-child(even) td { background: linear-gradient(180deg, #232C42 0%, #1D2537 100%); }
 
   @media (max-width: 600px) {
     tbody tr.setrow td { font-size: 15px; padding: 10px 10px; }
@@ -344,8 +350,8 @@
   .thumb { width: 88px; padding: 8px 4px 8px 10px; }
   .thumb img {
     display: block; width: 88px; height: auto; border-radius: 5px;
-    border: 1px solid var(--grid2); background: #EEF1F6;
-    box-shadow: 0 1px 3px rgba(23,33,47,0.10);
+    border: 1px solid var(--grid2); background: #232A38;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.35);
   }
   .dim { color: var(--faint); font-weight: 400; }
 
@@ -354,7 +360,7 @@
     gap: 4px;
     margin: 14px 0 16px;
     padding: 4px;
-    background: #EFF2F8;
+    background: #1B2029;
     border: 1px solid var(--grid2);
     border-radius: 9px;
     justify-content: center;
@@ -373,13 +379,13 @@
     cursor: pointer;
     transition: background 0.16s ease, color 0.16s ease;
   }
-  .tab:hover { color: var(--ink); background: rgba(255,255,255,0.6); }
+  .tab:hover { color: var(--ink); background: rgba(255,255,255,0.07); }
   .tab.is-on {
     background: var(--card);
-    color: #33436B;
-    box-shadow: 0 1px 3px rgba(23,33,47,0.12);
+    color: #A9BEF0;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.40);
   }
-  .tab:focus-visible { outline: 2px solid #7C8CC4; outline-offset: 2px; }
+  .tab:focus-visible { outline: 2px solid #8FA0DC; outline-offset: 2px; }
 
   .setfilter {
     display: flex;
@@ -409,13 +415,13 @@
     cursor: pointer;
     transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
   }
-  .chip:hover { border-color: #A9B7D6; color: var(--ink); }
+  .chip:hover { border-color: #4A5878; color: var(--ink); }
   .chip.is-on {
-    background: #DDE4F2;
-    border-color: #A9B7D6;
-    color: #33436B;
+    background: #232C42;
+    border-color: #4A5878;
+    color: #A9BEF0;
   }
-  .chip:focus-visible { outline: 2px solid #7C8CC4; outline-offset: 2px; }
+  .chip:focus-visible { outline: 2px solid #8FA0DC; outline-offset: 2px; }
   .chip.is-empty { opacity: 0.4; }
 
   .rtag {
@@ -427,14 +433,14 @@
     padding: 3px 9px;
     border-radius: 10px;
     white-space: nowrap;
-    background: #EEF0F5;
+    background: #262D3B;
     color: var(--soft);
   }
-  .rtag.r-epic     { background: #EDE4F5; color: #6C4E96; }
-  .rtag.r-rare     { background: #E1EAF8; color: #3F5E9C; }
-  .rtag.r-uncommon { background: #E4F1E9; color: #3F7C5C; }
-  .rtag.r-common   { background: #EFF1F4; color: #6E7D7A; }
-  .rtag.r-promo    { background: #FBEDDC; color: #8A6A33; }
+  .rtag.r-epic     { background: #2A2137; color: #B79BE2; }
+  .rtag.r-rare     { background: #1E2740; color: #7FA0E8; }
+  .rtag.r-uncommon { background: #17301F; color: #6FC292; }
+  .rtag.r-common   { background: #242B38; color: #98A5A2; }
+  .rtag.r-promo    { background: #332818; color: #D3AC63; }
 
   .namebox { position: relative; display: inline-flex; align-items: center; }
   .namebox input {
@@ -469,7 +475,7 @@
     position: absolute; top: 9px; left: 0; right: 0; height: 4px;
     background: var(--grid2); border-radius: 2px;
   }
-  .range__fill { position: absolute; top: 0; bottom: 0; background: #7C8CC4; border-radius: 2px; }
+  .range__fill { position: absolute; top: 0; bottom: 0; background: #8FA0DC; border-radius: 2px; }
   .range input[type=range] {
     position: absolute; top: 0; left: 0; width: 100%; height: 22px;
     -webkit-appearance: none; appearance: none; background: none; pointer-events: none; margin: 0;
@@ -477,12 +483,12 @@
   .range input[type=range]::-webkit-slider-thumb {
     -webkit-appearance: none; pointer-events: auto;
     width: 15px; height: 15px; border-radius: 50%;
-    background: var(--card); border: 2px solid #7C8CC4; cursor: grab;
-    box-shadow: 0 1px 3px rgba(23,33,47,0.2);
+    background: var(--card); border: 2px solid #8FA0DC; cursor: grab;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.5);
   }
   .range input[type=range]::-moz-range-thumb {
     pointer-events: auto; width: 15px; height: 15px; border-radius: 50%;
-    background: var(--card); border: 2px solid #7C8CC4; cursor: grab;
+    background: var(--card); border: 2px solid #8FA0DC; cursor: grab;
   }
   .range__out {
     font-family: var(--mono); font-size: 12px; color: var(--ink);
@@ -512,7 +518,7 @@
   .deck__suggest {
     display: none; position: absolute; z-index: 20; left: 0; right: 0; top: calc(100% + 4px);
     background: var(--card); border: 1px solid var(--grid2); border-radius: 8px;
-    box-shadow: 0 6px 18px rgba(23, 33, 47, 0.13);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45);
     max-height: 270px; overflow-y: auto; text-align: left;
   }
   .deck__suggest.on { display: block; }
@@ -538,9 +544,9 @@
   .deck__x { border: 0; background: none; cursor: pointer; color: var(--faint);
              font-size: 15px; line-height: 1; padding: 0 5px; }
   .deck__x:hover { color: var(--rose); }
-  .deck__x:focus-visible { outline: 2px solid #7C8CC4; outline-offset: 2px; }
+  .deck__x:focus-visible { outline: 2px solid #8FA0DC; outline-offset: 2px; }
 
-  #deckfoot td { border-top: 2px solid var(--grid2); background: #FBFCFE; padding: 11px 10px; }
+  #deckfoot td { border-top: 2px solid var(--grid2); background: #1E2430; padding: 11px 10px; }
   .deck__lbl { text-align: right; font-size: 10px; font-weight: 600; letter-spacing: 0.07em;
                text-transform: uppercase; color: var(--faint); }
   /* Sold totals take the same green the market line uses everywhere else, and
@@ -549,9 +555,9 @@
      out-specify the zebra striping. */
   .deck__tot { font-family: var(--mono); font-size: 15px; font-weight: 700;
                font-variant-numeric: tabular-nums; white-space: nowrap; }
-  .deck__tot.sold { color: #2F7F55; }
-  .deck__tot.max  { color: #33436B; }
-  .deck__max { color: #33436B; font-weight: 700; }
+  .deck__tot.sold { color: #5FD39A; }
+  .deck__tot.max  { color: #A9BEF0; }
+  .deck__max { color: #A9BEF0; font-weight: 700; }
   /* Marks an ask that was borrowed from the card's own sold average, in the
      same amber the "hold" signal uses - it is a substitution, not a listing. */
   /* warns that the average includes a freak sale, in the same amber as the
@@ -567,6 +573,23 @@
   /* table left, saved lists right. min-width:0 on the main column is what lets
      the table keep its own horizontal scroll instead of stretching the flex row */
   .deck__layout { display: flex; gap: 16px; align-items: flex-start; }
+  /* One column until a trade side exists, two once it does. min-width:0 lets
+     each table keep its own horizontal scroll instead of stretching the row. */
+  .deck__sides { display: flex; gap: 16px; align-items: flex-start; }
+  /* Side by side, nine columns do not fit in half the width. A trade is about
+     what each line is worth, not the unit price, so the two per-unit columns
+     stand down and the line totals stay. They come back when the trade side is
+     closed. */
+  .deck__sides.is-trade th:nth-child(4), .deck__sides.is-trade td:nth-child(4),
+  .deck__sides.is-trade th:nth-child(5), .deck__sides.is-trade td:nth-child(5) {
+    display: none;
+  }
+  .deck__sides.is-trade td.card { min-width: 128px; }
+  .deck__sides > .side { flex: 1 1 0; min-width: 0; }
+  @media (max-width: 1100px) {
+    .deck__sides { flex-direction: column; }
+    .deck__sides > .side { width: 100%; }
+  }
   .deck__main { flex: 1 1 auto; min-width: 0; }
   .deck__saved {
     flex: 0 0 208px; background: var(--card); border: 1px solid var(--grid2);
@@ -630,7 +653,7 @@
                 font-size: 11.5px; font-weight: 600; color: var(--soft); }
   /* green when the trade comes your way, rose when it costs you - the same
      reading the rest of the board gives those two colours */
-  .trade__d.in   { color: #2F7F55; font-weight: 700; }
+  .trade__d.in   { color: #5FD39A; font-weight: 700; }
   .trade__d.out  { color: var(--rose); font-weight: 700; }
   .trade__d.even { color: var(--faint); }
   .trade__note { margin-top: 8px; padding-top: 7px; border-top: 1px solid var(--grid);
@@ -665,9 +688,9 @@
     font-family: "Inter", system-ui, sans-serif; font-size: 10.5px; font-weight: 600;
     color: var(--soft); border-radius: 5px; padding: 3px 8px;
   }
-  .deck__deck button:hover { border-color: #A9B7D6; color: #33436B; }
+  .deck__deck button:hover { border-color: #4A5878; color: #A9BEF0; }
   .deck__deck button.del:hover { border-color: var(--rose); color: var(--rose); }
-  .deck__deck button:focus-visible { outline: 2px solid #7C8CC4; outline-offset: 2px; }
+  .deck__deck button:focus-visible { outline: 2px solid #8FA0DC; outline-offset: 2px; }
 
   .deck__saved-empty { font-size: 11.5px; color: var(--faint); padding: 4px 0 8px; }
   .deck__saved-note { font-size: 11px; color: var(--butter); margin-top: 9px; min-height: 0; }
@@ -955,6 +978,8 @@
 
       <div class="deck__layout">
         <div class="deck__main">
+          <div class="deck__sides" id="deckSides">
+          <div class="side" id="sideA">
           <div class="side__head" id="sideAhead" style="display:none">Your side</div>
           <div class="panel">
             <div class="scroll">
@@ -970,7 +995,7 @@
               </table>
             </div>
           </div>
-          <div class="side__extras" id="sideAextras" style="display:none">
+          <div class="side__extras" id="sideAextras">
             <label class="side__cash">Cash
               <input type="number" id="cashA" min="0" step="1" placeholder="0" aria-label="Cash on your side">
             </label>
@@ -981,8 +1006,9 @@
             </span>
           </div>
           <div class="catnote" id="decknote"></div>
+          </div><!-- /sideA -->
 
-          <div id="sideB" style="display:none">
+          <div id="sideB" class="side" style="display:none">
             <div class="side__head">Their side</div>
             <div class="deck__add">
               <div class="deck__box">
@@ -1019,8 +1045,9 @@
             </div>
             <div class="catnote" id="tradenote"></div>
 
-            <div class="trade__sum" id="tradesum"></div>
           </div>
+          </div>
+          <div class="trade__sum" id="tradesum"></div>
         </div>
 
         <aside class="deck__saved">
@@ -36266,9 +36293,9 @@ function chart(series, weeks, floor, ask, idx, tickCount, small, band) {
   ticks.forEach(function (t) {
     var ty = y(t).toFixed(1);
     grid += '<line x1="' + padL + '" y1="' + ty + '" x2="' + (w - padR) + '" y2="' + ty +
-            '" stroke="#E7EAF2" stroke-width="1"></line>';
+            '" stroke="#252C3A" stroke-width="1"></line>';
     labels += '<text x="' + (padL - 5) + '" y="' + (+ty + 3).toFixed(1) +
-              '" text-anchor="end" font-size="' + (small ? 8 : 8.5) + '" fill="#A3ADBC" ' +
+              '" text-anchor="end" font-size="' + (small ? 8 : 8.5) + '" fill="#7B879C" ' +
               'font-family="IBM Plex Mono, monospace">' +
               (t >= 1000 ? +(t / 1000).toFixed(2) + "k" : Math.round(t)) + '</text>';
   });
@@ -36285,10 +36312,10 @@ function chart(series, weeks, floor, ask, idx, tickCount, small, band) {
   marks.forEach(function (mk, n) {
     var mx = x(mk.i).toFixed(1);
     months += '<line x1="' + mx + '" y1="' + axisY + '" x2="' + mx + '" y2="' + (axisY + 3) +
-              '" stroke="#D6DBE8" stroke-width="1"></line>';
+              '" stroke="#39425A" stroke-width="1"></line>';
     if (n % everyN === 0) {
       months += '<text x="' + mx + '" y="' + (axisY + (small ? 11 : 13)) + '" text-anchor="middle" font-size="' + (small ? 8 : 8.5) + '" ' +
-                'fill="#A3ADBC" font-family="IBM Plex Mono, monospace">' + MON[mk.m] + '</text>';
+                'fill="#7B879C" font-family="IBM Plex Mono, monospace">' + MON[mk.m] + '</text>';
     }
   });
 
@@ -36297,8 +36324,8 @@ function chart(series, weeks, floor, ask, idx, tickCount, small, band) {
   };
 
   var pts = poly(series);
-  var line = "#3F5E9C";     // medium dark blue, the single-series fallback
-  var green = "#2F7F55";    // market price, only ever drawn as part of a band
+  var line = "#7FA0E8";     // medium dark blue, the single-series fallback
+  var green = "#5FD39A";    // market price, only ever drawn as part of a band
   var fy = hasFloor ? y(floor).toFixed(1) : null;
 
   var base = 0.15 + idx * 0.22;
@@ -36314,9 +36341,9 @@ function chart(series, weeks, floor, ask, idx, tickCount, small, band) {
                  return x(j).toFixed(1) + "," + y(band.lo[j]).toFixed(1);
                }).join(" ");
     bandLayer =
-      '<polygon class="rb-band"' + d(0) + ' points="' + area + '" fill="#D6DBE8" fill-opacity="0.45"></polygon>' +
-      '<polyline class="rb-edge"' + d(0.05) + ' points="' + poly(band.lo) + '" fill="none" stroke="#BFC7D6" stroke-width="0.9" stroke-linejoin="round" stroke-linecap="round"></polyline>' +
-      '<polyline class="rb-edge"' + d(0.05) + ' points="' + poly(band.hi) + '" fill="none" stroke="#BFC7D6" stroke-width="0.9" stroke-linejoin="round" stroke-linecap="round"></polyline>';
+      '<polygon class="rb-band"' + d(0) + ' points="' + area + '" fill="#39425A" fill-opacity="0.45"></polygon>' +
+      '<polyline class="rb-edge"' + d(0.05) + ' points="' + poly(band.lo) + '" fill="none" stroke="#4C5875" stroke-width="0.9" stroke-linejoin="round" stroke-linecap="round"></polyline>' +
+      '<polyline class="rb-edge"' + d(0.05) + ' points="' + poly(band.hi) + '" fill="none" stroke="#4C5875" stroke-width="0.9" stroke-linejoin="round" stroke-linecap="round"></polyline>';
   }
   var marketLayer = hasBand
     ? '<polyline class="rb-line"' + d(0.1) + ' points="' + poly(band.mkt) + '" fill="none" stroke="' + green + '" stroke-width="1.2" stroke-linejoin="round" stroke-linecap="round"></polyline>'
@@ -36338,9 +36365,9 @@ function chart(series, weeks, floor, ask, idx, tickCount, small, band) {
                  : 'weekly low, high and market by month over the past year')
         : 'weekly market price by month over the past year') + '">' +
     grid +
-    '<line x1="' + padL + '" y1="' + padT + '" x2="' + padL + '" y2="' + axisY + '" stroke="#D6DBE8" stroke-width="1"></line>' +
-    '<line x1="' + padL + '" y1="' + axisY + '" x2="' + (w - padR) + '" y2="' + axisY + '" stroke="#D6DBE8" stroke-width="1"></line>' +
-    (hasFloor ? '<line class="rb-floor"' + d(0.9) + ' x1="' + padL + '" y1="' + fy + '" x2="' + (w - padR) + '" y2="' + fy + '" stroke="#9AA8D8" stroke-width="1" stroke-dasharray="3 3"></line>' : '') +
+    '<line x1="' + padL + '" y1="' + padT + '" x2="' + padL + '" y2="' + axisY + '" stroke="#39425A" stroke-width="1"></line>' +
+    '<line x1="' + padL + '" y1="' + axisY + '" x2="' + (w - padR) + '" y2="' + axisY + '" stroke="#39425A" stroke-width="1"></line>' +
+    (hasFloor ? '<line class="rb-floor"' + d(0.9) + ' x1="' + padL + '" y1="' + fy + '" x2="' + (w - padR) + '" y2="' + fy + '" stroke="#6D7CB4" stroke-width="1" stroke-dasharray="3 3"></line>' : '') +
     bandLayer +
     marketLayer +
     /* the midpoint line: blue, and only where the band is hidden */
@@ -36636,11 +36663,11 @@ function restartCharts(scope) {
    switched on per tab by looking at what that tab's cards carry. */
 function keyHTML(mode) {
   if (mode === "mid") {
-    return '<i><b style="border-color:#2F7F55"></b>market</i>' +
-           '<i><b style="border-color:#3F5E9C"></b>Midpoint of High&amp;Low Solds</i>';
+    return '<i><b style="border-color:#5FD39A"></b>market</i>' +
+           '<i><b style="border-color:#7FA0E8"></b>Midpoint of High&amp;Low Solds</i>';
   }
   return '<i><b class="k-band"></b>weekly low to high</i>' +
-         '<i><b style="border-color:#2F7F55"></b>market</i>';
+         '<i><b style="border-color:#5FD39A"></b>market</i>';
 }
 
 function paintKeys() {
@@ -37055,7 +37082,9 @@ var deckRows = [];
 
     side.totals = { ask: askTotal, sold: soldTotal, max: maxTotal, cards: cards };
     foot.innerHTML = side.rows.length
-      ? '<tr><td class="deck__lbl" colspan="5">' + cards +
+      /* The label spans everything before the three totals. Two columns stand
+         down in trade mode, so a fixed span would swallow the Max total. */
+      ? '<tr><td class="deck__lbl" colspan="' + (tradeOn ? 3 : 5) + '">' + cards +
         (cards === 1 ? " card" : " cards") + ' &middot; totals</td>' +
         '<td class="deck__tot">' + money(askTotal) + '</td>' +
         '<td class="deck__tot sold">' + money(soldTotal) + '</td>' +
@@ -37063,6 +37092,14 @@ var deckRows = [];
       : "";
 
     var bits = [];
+    /* Without a trade side there is no summary to show cash in, so it is
+       stated here - otherwise typing into the cash box appears to do nothing. */
+    if (side.cash > 0) {
+      bits.push("plus " + money(side.cash) + " cash: " +
+                money(askTotal + side.cash) + " ask, " +
+                money(soldTotal + side.cash) + " sold, " +
+                money(maxTotal + side.cash) + " max");
+    }
     if (subbed)  bits.push(subbed  + (subbed  === 1 ? " copy has"  : " copies have") +
                            " nothing listed, so its ask falls back to its sold average");
     if (noSold)  bits.push(noSold  + (noSold  === 1 ? " copy has"  : " copies have") +
@@ -37421,6 +37458,7 @@ var deckRows = [];
     inp.addEventListener("input", function () {
       var v = parseFloat(inp.value);
       side.cash = (v > 0) ? Math.round(v * 100) / 100 : 0;
+      refreshTotals(side);
       renderTradeSummary();
     });
   }
@@ -37445,8 +37483,8 @@ var deckRows = [];
   if (tradeBtn) tradeBtn.addEventListener("click", function () {
     tradeOn = !tradeOn;
     el("sideB").style.display = tradeOn ? "" : "none";
+    el("deckSides").classList.toggle("is-trade", tradeOn);
     el("sideAhead").style.display = tradeOn ? "" : "none";
-    el("sideAextras").style.display = tradeOn ? "" : "none";
     tradeBtn.textContent = tradeOn ? "Close trade side" : "Add a trade side";
     tradeBtn.classList.toggle("is-on", tradeOn);
     renderDeck();

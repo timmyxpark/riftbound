@@ -5,6 +5,10 @@ const path = require("path");
 const ROOT = path.join(__dirname, "..");
 
 const html = fs.readFileSync(path.join(ROOT, "template.html"), "utf8");
+/* Market green and midpoint blue, read from the template so a palette change
+   updates the tests with it rather than breaking four assertions. */
+const GREEN = (html.match(/var green = "(#[0-9A-Fa-f]{6})"/) || [])[1];
+const BLUE  = (html.match(/var line = "(#[0-9A-Fa-f]{6})"/) || [])[1];
 const js = html.slice(html.indexOf("<script>") + 8, html.lastIndexOf("</script>"));
 
 // Stub the DOM the top-level code touches, then take the functions we need.
@@ -58,9 +62,11 @@ const svg = chart(mid, weeks, null, Math.max(...highs), 0, 6, true, { lo: lows, 
 ok(svg.startsWith("<svg") && svg.trim().endsWith("</svg>"), "banded chart returns a closed svg");
 ok((svg.match(/<polygon class="rb-band"/g) || []).length === 1, "one shaded low-to-high band");
 ok((svg.match(/<polyline class="rb-edge"/g) || []).length === 2, "two grey edge lines");
-ok(svg.includes('stroke="#2F7F55"'), "market drawn in green");
-ok(!svg.includes('stroke="#3F5E9C"'), "no blue on a banded chart");
-ok((svg.match(/class="rb-dot"[^>]*fill="#2F7F55"/) || []).length === 1, "end dot sits on the market line, in green");
+ok(!!GREEN && !!BLUE, `chart colours read from the template (${GREEN} / ${BLUE})`);
+ok(svg.includes('stroke="' + GREEN + '"'), "market drawn in green");
+ok(!svg.includes('stroke="' + BLUE + '"'), "no blue on a banded chart");
+ok((svg.match(new RegExp('class="rb-dot"[^>]*fill="' + GREEN + '"')) || []).length === 1,
+   "end dot sits on the market line, in green");
 ok(!svg.includes("#2C333D"), "no black midpoint line");
 ok((svg.match(/<polyline/g) || []).length === 3, "banded chart draws exactly 3 polylines (low, high, market)");
 /* the latest market price is printed right of the green end dot */
@@ -71,7 +77,7 @@ ok((svg.match(/<polyline/g) || []).length === 3, "banded chart draws exactly 3 p
     const dot = svg.match(/<circle class="rb-dot"[^>]*cx="([\d.]+)"[^>]*cy="([\d.]+)"/);
     ok(+label[1] > +dot[1], `label sits right of the dot (${label[1]} > ${dot[1]})`);
     ok(Math.abs(+label[2] - +dot[2]) < 6, "label is vertically level with the dot");
-    ok(label[3] === "#2F7F55", `label is green (${label[3]})`);
+    ok(label[3] === GREEN, `label is green (${label[3]})`);
     ok(label[4] === String(Math.round(mkt[mkt.length - 1])),
        `label is the latest market price rounded (${label[4]})`);
     /* it must fit inside the viewBox, or the svg edge clips it */
@@ -149,7 +155,7 @@ ok(Math.min(...labels) <= Math.min(...lows) && Math.max(...labels) >= Math.max(.
 const plain = chart(mkt, weeks, null, Math.max(...mkt), 0, 6, true);
 ok(!plain.includes("rb-band"), "unbanded chart draws no band");
 ok(plain.includes('class="rb-pt"'), "unbanded chart keeps its per-week dots");
-ok(plain.includes('stroke="#3F5E9C"') && !plain.includes('#2F7F55'),
+ok(plain.includes('stroke="' + BLUE + '"') && !plain.includes(GREEN),
    "unbanded fallback stays blue, never green");
 
 /* ---- packed catalog form -------------------------------------------------- */

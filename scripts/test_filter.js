@@ -6,6 +6,10 @@ const ROOT = path.join(__dirname, "..");
 const { JSDOM, VirtualConsole } = require("jsdom");
 
 const file = process.argv[2] || path.join(ROOT, "board.html");
+/* read from the template so a palette change does not break these */
+const tpl = fs.readFileSync(path.join(ROOT, "template.html"), "utf8");
+const GREEN = (tpl.match(/var green = "(#[0-9A-Fa-f]{6})"/) || [])[1];
+const BLUE  = (tpl.match(/var line = "(#[0-9A-Fa-f]{6})"/) || [])[1];
 /* Playables grows as sets land; pass the expected row count as argv[3] */
 const CATALOG_ROWS = +(process.argv[3] || 929);
 const errors = [];
@@ -43,7 +47,7 @@ ok(sigSvg && sigSvg.querySelectorAll("polyline.rb-edge").length === 0, "signatur
 const sigLines = sigSvg ? [...sigSvg.querySelectorAll("polyline")] : [];
 ok(sigLines.length === 2, `signature chart has exactly 2 lines (got ${sigLines.length})`);
 const sigStrokes = sigLines.map((l) => l.getAttribute("stroke")).sort();
-ok(sigStrokes.join(",") === "#2F7F55,#3F5E9C",
+ok(sigStrokes.join(",") === GREEN + "," + BLUE,
    `signature lines are green market + blue midpoint (got ${sigStrokes.join(",")})`);
 
 /* both signature lines end in a dot; other sections keep just the one */
@@ -51,7 +55,7 @@ ok(sigStrokes.join(",") === "#2F7F55,#3F5E9C",
   const dots = [...sigSvg.querySelectorAll("circle.rb-dot")];
   const fills = dots.map((c) => c.getAttribute("fill")).sort();
   ok(dots.length === 2, `signature chart has 2 end dots (got ${dots.length})`);
-  ok(fills.join(",") === "#2F7F55,#3F5E9C",
+  ok(fills.join(",") === GREEN + "," + BLUE,
      `end dots are green and blue (got ${fills.join(",")})`);
   const lines = [...sigSvg.querySelectorAll("polyline")];
   const endOf = (el) => el.getAttribute("points").trim().split(/\s+/).pop();
