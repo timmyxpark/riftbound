@@ -21,6 +21,10 @@ EXPECT = {
     "catalog": {"Origins": 299, "Spiritforged": 230, "Unleashed": 225, "Vendetta": 175},
     "boxes": 4,              # one booster display per released set
     "sealed": 5,             # standalone bundles and box sets
+    # Promos & Extras is defined by subtraction - every card the other tabs do
+    # not carry - so this number moves whenever a set lands or the Playables
+    # classifier changes. Update it deliberately.
+    "extras": 401,
 }
 
 
@@ -50,7 +54,7 @@ def check(snap):
     if n_sets != EXPECT["sets"]:
         errs.append(f"sets: {n_sets}, expected {EXPECT['sets']}")
 
-    for key in ("signatures", "overnumbered"):
+    for key in ("signatures", "overnumbered", "extras"):
         n = len(cards_of(snap.get(key)))
         if n != EXPECT[key]:
             errs.append(f"{key}: {n} cards, expected {EXPECT[key]}")

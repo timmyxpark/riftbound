@@ -17,7 +17,7 @@ UA = ("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 "
 
 snap = json.load(open(os.path.join(REPO, "snapshot.json")))
 ids = []
-for k in ("signatures", "overnumbered", "catalog"):
+for k in ("signatures", "overnumbered", "catalog", "extras"):
     for g in snap.get(k) or []:
         for c in g.get("cards", []):
             if c.get("id") is not None and c["id"] not in ids:

@@ -60,6 +60,33 @@ ok(rows("sealedbody") === 5, `other-sealed table has ${rows("sealedbody")} rows 
 }
 ok(rows("sigbody") === 45, `signatures table has ${rows("sigbody")} card rows (expect 45)`);
 ok(rows("overbody") === 92, `overnumbered table has ${rows("overbody")} card rows (expect 92)`);
+
+/* Promos & Extras is everything the other tabs do not carry - Organized Play
+   promos including the metal Prize Wall cards, alt arts and showcase runes the
+   Playables classifier drops, Proving Grounds and the judge promos. */
+const EXTRA_ROWS = +(process.argv[4] || 401);
+ok(rows("extrabody") === EXTRA_ROWS,
+   `promos & extras table has ${rows("extrabody")} card rows (expect ${EXTRA_ROWS})`);
+{
+  const tabs = [...doc.querySelectorAll(".tab")].map((t) => t.textContent.trim());
+  ok(tabs[3] === "Promos & Extras",
+     `the new tab sits after Overnumbered (${tabs.slice(1, 5).join(" | ")})`);
+}
+{
+  // it renders through the signature renderer, so it must chart the same way
+  const svgs = doc.querySelectorAll("#extrabody svg").length;
+  ok(svgs > 0, `promos & extras draws ${svgs} charts`);
+  // the metal cards are the ones the user asked about by name
+  const metal = [...doc.querySelectorAll("#extrabody .card")]
+    .filter((td) => /\(Metal\)/.test(td.textContent)).length;
+  ok(metal > 0, `metal cards are present (${metal})`);
+  // grouped by source, not by booster set
+  const banners = [...doc.querySelectorAll("#extrabody tr.setrow")]
+    .map((r) => r.textContent.trim());
+  ok(banners.length > 1, `grouped into ${banners.length} sources`);
+  ok(banners.some((b) => /Organized Play/.test(b)),
+     "Organized Play promos are one of the groups");
+}
 /* the catalog grows as sets land; read the expectation from the snapshot the
    board was built from rather than pinning a number that goes stale */
 ok(rows("catbody") === CATALOG_ROWS,

@@ -653,6 +653,7 @@
     <button class="tab is-on" role="tab" aria-selected="true" data-panel="p-cases">Sealed</button>
     <button class="tab" role="tab" aria-selected="false" data-panel="p-sig">Signature Overnumbers</button>
     <button class="tab" role="tab" aria-selected="false" data-panel="p-over">Overnumbered</button>
+    <button class="tab" role="tab" aria-selected="false" data-panel="p-extra">Promos &amp; Extras</button>
     <button class="tab" role="tab" aria-selected="false" data-panel="p-cat">Playables</button>
     <button class="tab" role="tab" aria-selected="false" data-panel="p-deck">Deck Pricer</button>
     <button class="tab" role="tab" aria-selected="false" data-panel="p-cal">Calendar</button>
@@ -821,6 +822,30 @@
 
   </section>
 
+
+  <section id="p-extra" class="tabpanel">
+  <div class="sig">
+    <div class="sig__title">Promos &amp; Extras</div>
+    <div class="sig__sub">Everything the other tabs do not carry: Organized Play promos including the metal Prize Wall and Best Of cards, the alternate arts and showcase runes that the Playables classifier deliberately drops, Proving Grounds, Judge promos and Secret Garden. Same format as the signature tables - cheapest Near Mint English ask, card price only, and the last five real sales. Grouped by where the card comes from rather than by booster set, so the set chips above do not narrow this table.</div>
+    <div class="ckey"></div>
+    <div class="panel">
+      <div class="scroll">
+        <table>
+          <thead>
+            <tr>
+              <th></th>
+              <th>Card</th>
+              <th>Ask now</th>
+              <th>Last 5 sales</th>
+              <th>Market Price vs. High/Low Range</th>
+            </tr>
+          </thead>
+          <tbody id="extrabody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  </section>
 
   <section id="p-cat" class="tabpanel">
     <div class="sig">
@@ -1650,9 +1675,12 @@ function paintKeys() {
     (SEED.sets || []).some(function (s) { return !!(s.low && s.high && s.market); }),
     hasBands(SEED.signatures, "s"),
     hasBands(SEED.overnumbered, "s"),
+    hasBands(SEED.extras, "s"),
     hasBands(SEED.catalog, "q")
   ];
-  var modes = [null, "mid", null, null];   /* signatures is the second key */
+  /* one entry per .ckey in DOM order: cases, signatures, overnumbered,
+     promos & extras, playables. Signatures is the only midpoint-style chart. */
+  var modes = [null, "mid", null, null, null];
   for (var i = 0; i < keys.length; i++) {
     if (banded[i]) { keys[i].innerHTML = keyHTML(modes[i]); keys[i].className = "ckey on"; }
     else { keys[i].innerHTML = ""; keys[i].className = "ckey"; }
@@ -1671,6 +1699,9 @@ function drawAll() {
   render(SEED, activeSets);
   renderCards(SEED.signatures, "sigbody", "signatures", activeSets, null, false, "mid");
   renderCards(SEED.overnumbered, "overbody", "overnumbered", activeSets);
+  /* null sets: these groups are promo/alt-art sources, not booster sets,
+     so the set chips would empty the table rather than narrow it. */
+  renderCards(SEED.extras, "extrabody", "cards", null);
   renderCatalog(SEED.catalog, activeSets, activeRarities, activeMinPrice, activeMaxPrice);
   paintKeys();
   restartCharts(document.querySelector ? document.querySelector(".tabpanel.is-on") : null);
@@ -1724,14 +1755,16 @@ function drawAll() {
       var setF = document.getElementById("setfilter");
       /* The deck list is built by name across every set, so the set chips would
          do nothing there - same reasoning as the calendar. */
-      if (setF) setF.style.display = (panelId === "p-cal" || panelId === "p-deck") ? "none" : "";
+      if (setF) setF.style.display =
+        (panelId === "p-cal" || panelId === "p-deck" || panelId === "p-extra") ? "none" : "";
       var rarF = document.getElementById("rarityfilter");
       if (rarF) rarF.style.display = (panelId === "p-cat") ? "" : "none";
       var priF = document.getElementById("pricefilter");
       if (priF) priF.style.display = (panelId === "p-cat") ? "" : "none";
       var namF = document.getElementById("namefilter");
       if (namF) namF.style.display =
-        (panelId === "p-sig" || panelId === "p-over" || panelId === "p-cat") ? "" : "none";
+        (panelId === "p-sig" || panelId === "p-over" || panelId === "p-cat"
+         || panelId === "p-extra") ? "" : "none";
       var hint = document.querySelector ? document.querySelector(".hint") : null;
       if (hint) hint.style.display = (panelId === "p-cal") ? "none" : "";
       /* every section starts unfiltered */

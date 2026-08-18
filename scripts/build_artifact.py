@@ -34,8 +34,10 @@ OUT   = os.path.join(HERE, "riftbound-board.html")
 
 # The publish path times out somewhere above ~6.5 MB. 1049 thumbnails at
 # 176px/q60 made a 10 MB page and 144px/q52 a 7 MB one, both rejected;
-# 120px still clears the 88px display size with room for a hi-dpi screen.
-THUMB_W, WEBP_Q = 108, 48
+# 94px still clears the 88px browsing-table display size; deck rows show 62px.
+# The Promos & Extras tab added ~220 more images and pushed the page to 5.66 MB,
+# past the size where publishing starts timing out.
+THUMB_W, WEBP_Q = 94, 46
 
 # ---------- 1. encode the thumbnails ----------
 imgs, raw_total = {}, 0
