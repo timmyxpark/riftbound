@@ -25,6 +25,7 @@ say() { echo; echo "=== $* ($(date +%H:%M:%S)) ==="; }
 # one snapshot. The image cache is kept: card art does not change.
 say "clearing the previous run's pull files"
 rm -f "$WORK"/set_*_pull.txt "$WORK"/sig_hist.txt "$WORK"/ovr_hist.txt \
+      "$WORK"/extras_pull.txt "$WORK"/extras_list.json \
       "$WORK"/sigovr_sales_new.txt "$WORK"/*_sales.txt "$WORK"/ask_sigovr.txt \
       "$WORK"/cases_pull_new.txt "$WORK"/case_meta.json "$WORK"/sealed_pull.json \
       "$WORK"/m*.json "$WORK"/set_*.json
@@ -64,6 +65,11 @@ done
 
 say "signatures and overnumbered"
 $PY scripts/pull_sigovr.py
+say "promos and extras"
+# Added Aug 18 2026. This section was pulled once when it was built and then
+# left behind by every refresh - it is in the Trade Calculator now, so a stale
+# price here is a wrong answer rather than an old one.
+$PY scripts/pull_extras.py
 say "sealed cases"
 $PY scripts/pull_cases.py
 say "boxes and other sealed"
@@ -92,7 +98,8 @@ for sec in ("signatures", "overnumbered"):
 PYEOF
 $PY scripts/merge_sales.py "$WORK/signatures_sales.txt"   "$WORK/m7.json" "$WORK/m8.json" signatures
 $PY scripts/merge_sales.py "$WORK/overnumbered_sales.txt" "$WORK/m8.json" "$WORK/m9.json" overnumbered
-$PY scripts/merge_cases.py "$WORK/cases_pull_new.txt"     "$WORK/m9.json" "$WORK/m10.json"
+$PY scripts/merge_cases.py "$WORK/cases_pull_new.txt"     "$WORK/m9.json" "$WORK/m9b.json"
+$PY scripts/merge_extras.py "$WORK/extras_pull.txt" "$WORK/extras_list.json" "$WORK/m9b.json" "$WORK/m10.json"
 $PY - <<'PYEOF'
 import datetime, json, os
 work = os.environ["RIFTBOUND_WORK"]

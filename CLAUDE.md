@@ -50,11 +50,15 @@ All four suites must pass. They exist because of specific bugs that shipped:
 - **Near Mint, raw only.** Grades appear in the sale title, not `listingType`.
 - **Printing.** A product can carry both a Normal and a Foil row. Prefer Normal
   where it exists; it is what the ask column prices and where the volume is.
-- **The five behind each number.** `a5` is the cheapest five asks (cheapest
-  first, first entry equals `a`); `c` is the last five sales (newest first).
-  Neither may be re-sorted for display, and `a5` must come from the same
-  `clean_asks` chain as the ask - see HANDOFF. The merges refuse the file if
-  `a5[0]` and `a` disagree.
+- **The five behind each number.** `a5` is the five cheapest asks as card
+  prices, `a5d` the same five delivered; `c` is the last five sales (newest
+  first). Neither list may be re-sorted for display.
+- **Asks are ordered by DELIVERED price and reported as card price.** Those are
+  two decisions. Salvage asked $2.99 against a real cheapest of $4.99 because
+  one clean listing carried $19.99 shipping - ranking by card price alone let
+  it invent a floor under 82 real listings. `a5` therefore does NOT ascend;
+  `a5d` does, and that is what the merges validate. The merges also refuse the
+  file if `a5[0]` and `a` disagree.
 - **Market price is a trailing average** and legitimately sits outside a given
   week's low-to-high range on thin cards. That is signal, not corruption.
 - **Prices exclude shipping.** Ask, sales and the weekly low/high are all the
@@ -95,6 +99,10 @@ file here.
   a signed-in pull with `credentials: "include"` can fill them.
 - Playables now covers all four sets: Origins 299, Spiritforged 230,
   Unleashed 225, Vendetta 175 - **929 cards**.
+- Promos & Extras is refreshed by `refresh.sh` as of Aug 18 2026
+  (`pull_extras.py`). It was pulled once when built and then skipped by every
+  refresh for weeks; those 401 cards are in the Trade Calculator now, so a
+  stale price there is a wrong answer rather than an old one.
 - Vendetta is **175**, confirmed. A fresh enumeration classified independently
   to 175 and matched `catalog_ids.json` id for id, so the 177 in the original
   notes is simply wrong. Origins is 299: 298 numbered plus the null-numbered

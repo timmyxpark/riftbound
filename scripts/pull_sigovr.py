@@ -51,7 +51,7 @@ for section, hist_name in sections.items():
                 # One listing fetch, reused for the ask and its depth.
                 rows = listings(pid)
                 ask, pr = ask_and_printing(pid, rows)
-                depth = ",".join(f"{v}" for v in ask_depth(rows))
+                depth = ",".join(f"{c}:{d}" for c, d in ask_depth(rows))
                 asks.append(f"{pid}|{ask if ask is not None else 'none'}|{pr or '-'}|0|0|{depth}")
                 time.sleep(0.25)
                 weeks, lo, hi, mk = history(pid, pr)

@@ -4,7 +4,7 @@
     python3 merge_extras.py extras_pull.txt extras_list.json snapshot.json out.json
 
 Line format is merge_set.py's:
-    id~name~rarity~ask~weeks~first~last~lo~hi~qLow~qHigh~qMarket~sales
+    id~name~rarity~ask~weeks~first~last~lo~hi~qLow~qHigh~qMarket~sales~asks
 
 Two things differ from a catalog merge and both matter:
 
@@ -25,7 +25,7 @@ what the grouping means here.
 import json
 import sys
 
-FIELDS = 13
+FIELDS = 14
 
 
 def parse(path):
@@ -49,7 +49,22 @@ def parse(path):
             # renamed on purpose - see the module docstring
             "sl": p[9] or None, "sh": p[10] or None, "sm": p[11] or None,
             "c": [round(float(x), 2) for x in p[12].split(",") if x.strip()],
+            "a5": [], "a5d": [],
         }
+        for part in p[13].split(","):
+            part = part.strip()
+            if not part:
+                continue
+            if ":" not in part:
+                bad.append(f"id {pid}: ask {part!r} is not a card:delivered pair")
+                continue
+            cp, dp = part.split(":", 1)
+            rec["a5"].append(round(float(cp), 2))
+            rec["a5d"].append(round(float(dp), 2))
+        if rec["a5d"] != sorted(rec["a5d"]):
+            bad.append(f"id {pid}: ask depth is not ordered by delivered price: {rec['a5d']}")
+        if rec["a5"] and rec["a"] is not None and abs(rec["a5"][0] - rec["a"]) > 0.005:
+            bad.append(f"id {pid}: ask {rec['a']} is not the first of {rec['a5']}")
         if rec["sl"]:
             for label, q in (("low", rec["sl"]), ("high", rec["sh"]), ("market", rec["sm"])):
                 if q is None or len(q) != weeks * 2:
@@ -112,8 +127,10 @@ def main():
     charted = sum(1 for r in pulled.values() if r["sl"])
     priced = sum(1 for r in pulled.values() if r["a"] is not None)
     sold = sum(1 for r in pulled.values() if r["c"])
+    deep = sum(1 for r in pulled.values() if len(r["a5"]) >= 2)
     print(f"extras: {len(pulled)} cards in {len(order)} groups, "
-          f"{charted} charted, {priced} with an ask, {sold} with sales")
+          f"{charted} charted, {priced} with an ask, {sold} with sales, "
+          f"{deep} with more than one ask listed")
     for s in order:
         print(f"    {len(groups[s]):>4}  {s}")
 

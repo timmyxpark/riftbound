@@ -48,6 +48,7 @@ ok(doc.getElementById("setfilter").style.display === "none",
 ok(/Nothing added yet/.test(body.textContent), "empty state shown before anything is added");
 ok(foot.innerHTML.trim() === "", "no totals row while the list is empty");
 
+const snapEarly = JSON.parse(fs.readFileSync(path.join(ROOT, "snapshot.json"), "utf8"));
 const type = (s) => {
   box.value = s;
   box.dispatchEvent(new win.Event("input", { bubbles: true }));
@@ -61,6 +62,17 @@ const headline = (r, i) => {
   const el = r.querySelectorAll("td")[i].querySelector(".deck__now");
   return el ? el.textContent.trim() : cell(r, i);
 };
+/* Column 3 and 4 are the two history columns - up to five prices each, every
+   one of them on the page. Column 5 and 6 are the comps drawn from them. */
+const histVals = (r, i) => [...r.querySelectorAll("td")[i].querySelectorAll("b")]
+  .map((b) => parseFloat(b.textContent.replace(/[^0-9.]/g, "")));
+const compVal = (r, i) => {
+  const t = headline(r, i);
+  return /\$/.test(t) ? parseFloat(t.replace(/[^0-9.]/g, "")) : null;
+};
+const modeSel = (r, kind) => r.querySelector(`.deck__mode[data-kind="${kind}"]`);
+const set = (el, v) => { el.value = v; el.dispatchEvent(new win.Event("input", { bubbles: true })); };
+const setSel = (el, v) => { el.value = v; el.dispatchEvent(new win.Event("change", { bubbles: true })); };
 const pick = (i) => {
   const o = opts()[i];
   o.dispatchEvent(new win.MouseEvent("mousedown", { bubbles: true }));
@@ -78,6 +90,44 @@ ok(opts().every((o) => /yasuo/i.test(o.querySelector("b").textContent)),
 {
   const labels = new Set(opts().map((o) => o.querySelector("span").textContent.trim()));
   ok(labels.size > 1, `suggestions name their section and set (${labels.size} distinct)`);
+}
+
+/* Every printing of a name has to be offered, promos and alternate arts
+   included. The picker used to cap at twelve, which silently dropped two of
+   Ahri's fourteen - both alternate arts - and read as the board not carrying
+   them at all. The list scrolls; the cap is only there to stop a one-letter
+   query rendering the catalog. */
+{
+  const inData = (q) => {
+    const f = q.toLowerCase().replace(/[^a-z0-9]/g, "");
+    let n = 0;
+    for (const key of ["signatures", "overnumbered", "catalog", "extras"]) {
+      for (const g of snapEarly[key] || []) {
+        for (const c of g.cards || []) {
+          if (c.n.toLowerCase().replace(/[^a-z0-9]/g, "").includes(f)) n++;
+        }
+      }
+    }
+    return n;
+  };
+  let checked = 0;
+  ["ahri", "yasuo", "poppy"].forEach((q) => {
+    const want = inData(q);
+    if (!want) return;
+    checked++;
+    type(q);
+    ok(opts().length === want, `"${q}" offers every printing (${opts().length} of ${want})`);
+  });
+  ok(checked > 0, "the name check ran against real cards");
+
+  // and the promo section is genuinely reachable, not just counted
+  type("alternate art");
+  const alts = opts();
+  ok(alts.length > 0, `alternate arts are pickable (${alts.length} offered)`);
+  ok(alts.every((o) => /Promo/.test(o.querySelector("span").textContent)),
+     "and are labelled as promos so they cannot be picked by mistake");
+  type("metal");
+  ok(opts().length > 0, `metal cards are pickable (${opts().length})`);
 }
 
 type("kaisa");
@@ -107,11 +157,39 @@ for (const key of ["signatures", "overnumbered", "catalog"]) {
   const card = all.find((c) => c.n === name && c.a != null);
   ok(!!card, `row card ${name} found in the snapshot`);
   const mean = Math.round((card.c.reduce((a, b) => a + b, 0) / card.c.length) * 100) / 100;
-  ok(headline(row, 3) === money(card.a), `ask each is the card's ask (${headline(row, 3)})`);
-  ok(cell(row, 4).startsWith(money(mean)),
-     `avg last 5 is the mean of its ${card.c.length} sales (${money(mean)})`);
-  ok(cell(row, 5) === money(card.a), "ask total at qty 1 equals ask each");
-  ok(cell(row, 6).startsWith(money(mean)), "sold total at qty 1 equals the mean");
+
+  /* Both histories are shown in full rather than reduced to one number. The
+     asks are ordered by DELIVERED price, so their card prices legitimately run
+     out of order - checking them against the stored list rather than against
+     "ascending" is the point, since assuming ascending is exactly what let a
+     $2.99 card behind $19.99 shipping lead 82 real listings. */
+  ok(histVals(row, 3).join() === (card.a5 || []).slice(0, 5).join(),
+     `the asking history shows the card's own asks (${histVals(row, 3).join(", ")})`);
+  ok(histVals(row, 4).join() === (card.c || []).slice(0, 5).join(),
+     `the sales history shows its own sales (${histVals(row, 4).join(", ")})`);
+
+  // Latest is the head of each list: the live cheapest listing, the newest sale
+  ok(compVal(row, 5) === card.a, `ask comp defaults to Latest (${headline(row, 5)})`);
+  ok(compVal(row, 6) === card.c[0], `sold comp defaults to Latest (${headline(row, 6)})`);
+  ok(modeSel(row, "ask").value === "latest" && modeSel(row, "sold").value === "latest",
+     "both comps open on Latest");
+
+  /* Average is a choice, not the default - the mean of five sales and the most
+     recent sale are different claims and the row should not silently pick one. */
+  setSel(modeSel(deckRows()[0], "sold"), "avg");
+  ok(compVal(deckRows()[0], 6) === mean,
+     `Average gives the mean of its ${card.c.length} sales (${money(mean)})`);
+  const sorted = card.c.slice().sort((a, b) => a - b);
+  setSel(modeSel(deckRows()[0], "sold"), "high");
+  ok(compVal(deckRows()[0], 6) === sorted[sorted.length - 1], "Highest gives the dearest sale");
+  setSel(modeSel(deckRows()[0], "sold"), "low");
+  ok(compVal(deckRows()[0], 6) === sorted[0], "Lowest gives the cheapest sale");
+  if (card.c.length >= 3) {
+    const m3 = Math.round((card.c.slice(0, 3).reduce((a, b) => a + b, 0) / 3) * 100) / 100;
+    setSel(modeSel(deckRows()[0], "sold"), "avg3");
+    ok(compVal(deckRows()[0], 6) === m3, `Average (3) uses the first three (${money(m3)})`);
+  }
+  setSel(modeSel(deckRows()[0], "sold"), "latest");
 }
 
 // --- quantity -------------------------------------------------------------
@@ -124,15 +202,19 @@ for (const key of ["signatures", "overnumbered", "catalog"]) {
   qty.value = "3";
   qty.dispatchEvent(new win.Event("input", { bubbles: true }));
   const r = deckRows()[0];
-  ok(cell(r, 5) === money(card.a * 3), `qty 3 multiplies the ask total (${cell(r, 5)})`);
-  ok(cell(r, 6) === money(mean * 3), `qty 3 multiplies the sold total (${cell(r, 6)})`);
+  /* The comp columns are per-copy prices, so quantity moves the footer totals
+     and the row value - not the comp itself. */
+  ok(compVal(r, 5) === card.a, `qty 3 leaves the ask comp per copy (${headline(r, 5)})`);
+  ok(cell(r, 10) === money(card.a * 3), `qty 3 multiplies the row value (${cell(r, 10)})`);
+  const tot3 = [...foot.querySelectorAll(".deck__tot")].map((e) => e.textContent.trim());
+  ok(tot3[0] === money(card.a * 3), `and the ask total (${tot3[0]})`);
   ok(!!doc.querySelector(".deck__qty"), "the quantity box survives a totals refresh");
   ok(/3 cards/.test(foot.textContent), "the totals row counts copies, not lines");
 
   // a nonsense quantity must not poison the totals
   qty.value = "0";
   qty.dispatchEvent(new win.Event("input", { bubbles: true }));
-  ok(cell(deckRows()[0], 5) === money(card.a), "quantity 0 falls back to 1");
+  ok(cell(deckRows()[0], 10) === money(card.a), "quantity 0 falls back to 1");
 }
 
 // --- two cards, and the totals --------------------------------------------
@@ -171,93 +253,98 @@ if (opts().length) pick(0);
 }
 
 // --- the five behind each number -------------------------------------------
-/* A headline price does not say whether it is representative, so each of the
-   two price cells folds out the list it came from. The lists are checked
-   against the snapshot rather than against the page's own arithmetic: an ask
-   depth that quietly showed sales, or a sold list re-sorted into ascending
-   order, would look perfectly plausible on screen. */
+/* A headline price does not say whether it is representative, so both history
+   columns show every price they were drawn from - up to five, on the page, not
+   behind a click. The lists are checked against the snapshot rather than
+   against the page's own arithmetic: an ask history that quietly showed sales,
+   or a sales list re-sorted into ascending order, would look perfectly
+   plausible on screen. */
 {
   const clear = () => doc.getElementById("deckClear")
     .dispatchEvent(new win.MouseEvent("click", { bubbles: true }));
-  // read the price element, never the whole row - the rank sits next to it
-  const nums = (host) => [...host.querySelectorAll(".deck__li b")]
-    .map((b) => parseFloat(b.textContent.replace(/[^0-9.]/g, "")));
-
-  const openList = (card, colIdx, kind) => {
+  const put = (card) => {
     clear();
     type(card.n);
     const i = opts().findIndex((o) => o.querySelector("b").textContent.trim() === card.n);
     if (i < 0) return null;
     pick(i);
-    const td = deckRows()[0].querySelectorAll("td")[colIdx];
-    const btn = td.querySelector('[data-more="' + kind + '"]');
-    if (!btn) return null;
-    const list = td.querySelector(".deck__list");
-    ok(list.hidden === true, `the ${kind} list starts folded away`);
-    btn.dispatchEvent(new win.MouseEvent("click", { bubbles: true }));
-    ok(list.hidden === false, `clicking "${btn.textContent.trim()}" opens it`);
-    return { btn: btn, list: list };
+    return deckRows()[0];
   };
 
   // --- the last five sales, newest first ------------------------------------
   const sold = all.find((c) => (c.c || []).length >= 3 &&
                                new Set(c.c).size === (c.c || []).length);
-  const s1 = sold && openList(sold, 4, "sold");
-  if (!s1) {
-    ok(false, "a card with several distinct sales offers its sold list");
+  const r1 = sold && put(sold);
+  if (!r1) {
+    ok(false, "a card with several distinct sales shows its sales history");
   } else {
-    const shown = nums(s1.list);
-    ok(shown.length === sold.c.length,
+    const shown = histVals(r1, 4);
+    ok(shown.length === Math.min(sold.c.length, 5),
        `${sold.n} lists all ${sold.c.length} of its sales (${shown.length})`);
     /* Newest first, which is the order the feed returns and the only order in
        which "the last five sales" means anything. Sorting it would turn a
        falling card and a rising one into the same picture. */
     ok(shown.every((v, i) => Math.abs(v - sold.c[i]) < 0.005),
        `in the order they happened, newest first (${shown.join(", ")})`);
-    ok(/newest first/i.test(s1.list.textContent), "and the list says so");
-    s1.btn.dispatchEvent(new win.MouseEvent("click", { bubbles: true }));
-    ok(s1.list.hidden === true, "clicking again folds it back");
+    ok(shown.length <= 5, "and never more than five");
   }
 
-  // --- the next five asks, cheapest first -----------------------------------
+  // --- the asks, ordered by what a buyer actually pays -----------------------
   const deep = all.filter((c) => (c.a5 || []).length >= 2);
   console.log(`      ${deep.length} of ${all.length} cards carry more than one ask`);
   if (!deep.length) {
-    /* Not an excuse to pass quietly: ask depth is pulled per card, so an empty
-       field means the pull did not land, and the cell is a headline with
-       nothing behind it. Say so loudly rather than skipping. */
     ok(false, "NO card carries ask depth - the ask pull has not landed yet");
   } else {
     const card = deep[0];
-    const a1 = openList(card, 3, "ask");
-    if (!a1) {
-      ok(false, `${card.n} has ${card.a5.length} asks but offers no list`);
+    const r2 = put(card);
+    if (!r2) {
+      ok(false, `${card.n} has ${card.a5.length} asks but shows no history`);
     } else {
-      const shown = nums(a1.list);
+      const shown = histVals(r2, 3);
       ok(shown.every((v, i) => Math.abs(v - card.a5[i]) < 0.005),
-         `${card.n} lists its asks cheapest first (${shown.join(", ")})`);
-      ok(Math.abs(shown[0] - card.a) < 0.005,
-         `the headline ask is the first of them (${money(card.a)})`);
-      ok(shown.every((v, i) => i === 0 || v >= shown[i - 1]), "ascending, never re-sorted");
-      ok(/cheapest first/i.test(a1.list.textContent), "and the list says so");
+         `${card.n} lists its asks in the stored order (${shown.join(", ")})`);
+      ok(shown.length <= 5, "and never more than five");
+      ok(Math.abs(compVal(r2, 5) - card.a) < 0.005,
+         `the ask comp opens on the first of them (${money(card.a)})`);
     }
-    /* The two lists must not be the same list. A card whose asks and sales
+    /* The two histories must not be the same list. A card whose asks and sales
        both come back as five numbers would hide a wired-up-wrong cell. */
     const both = deep.find((c) => (c.c || []).length >= 2 &&
                                   (c.a5 || []).join() !== (c.c || []).join());
     if (both) {
-      clear();
-      type(both.n);
-      const i = opts().findIndex((o) => o.querySelector("b").textContent.trim() === both.n);
-      if (i >= 0) {
-        pick(i);
-        const tds = deckRows()[0].querySelectorAll("td");
-        const askL = nums(tds[3]), soldL = nums(tds[4]);
-        ok(askL.join() !== soldL.join(),
+      const r3 = put(both);
+      if (r3) {
+        ok(histVals(r3, 3).join() !== histVals(r3, 4).join(),
            `${both.n} shows different numbers for its asks and its sales`);
-        ok(askL.join() === both.a5.join() && soldL.join() === both.c.join(),
-           "each cell shows its own field, not the other's");
+        ok(histVals(r3, 3).join() === both.a5.slice(0, 5).join() &&
+           histVals(r3, 4).join() === both.c.slice(0, 5).join(),
+           "each column shows its own field, not the other's");
       }
+    }
+  }
+
+  /* Delivered prices are carried alongside the card prices so the basis can be
+     switched without another pull - and the two must actually differ, or the
+     toggle is showing the same numbers under two labels. */
+  {
+    const withShip = all.find((c) => (c.a5d || []).length >= 2 &&
+                                     (c.a5d || []).join() !== (c.a5 || []).join());
+    if (!withShip) {
+      ok(false, "NO card carries delivered prices - the shipping pull has not landed");
+    } else {
+      const r4 = put(withShip);
+      const chip = [...doc.querySelectorAll(".chip--basis")].find((c) => c.dataset.basis === "delivered");
+      ok(!!chip, "the asking basis can be switched to delivered");
+      chip.dispatchEvent(new win.MouseEvent("click", { bubbles: true }));
+      const shown = histVals(deckRows()[0], 3);
+      ok(shown.join() === withShip.a5d.slice(0, 5).join(),
+         `delivered shows card plus shipping (${shown.join(", ")} vs card ${withShip.a5.slice(0, 5).join(", ")})`);
+      ok(shown.every((v, i) => v >= withShip.a5[i] - 0.005),
+         "every delivered price is at least its card price");
+      ok(shown.every((v, i) => i === 0 || v >= shown[i - 1]),
+         "and the delivered series ascends, which is what the ordering is by");
+      [...doc.querySelectorAll(".chip--basis")].find((c) => c.dataset.basis === "card")
+        .dispatchEvent(new win.MouseEvent("click", { bubbles: true }));
     }
   }
   clear();
@@ -322,8 +409,10 @@ if (opts().length) pick(0);
     .map((b) => b.closest("table"))
     .flatMap((t) => [...t.querySelectorAll("thead th")])
     .map((h) => h.textContent.trim());
-  ok(heads[3] === "Asking", `Asking column present (${heads[3]})`);
-  ok(heads[4] === "Avg Last 5 Sold", `Avg Last 5 Sold column present (${heads[4]})`);
+  ok(heads[3] === "Asking history", `Asking history column present (${heads[3]})`);
+  ok(heads[4] === "Sales history", `Sales history column present (${heads[4]})`);
+  ok(heads[5] === "Ask comp" && heads[6] === "Sold comp",
+     `the two comps follow them (${heads.slice(5, 7).join(" | ")})`);
   ok(!heads.some((h) => /^Max\(/.test(h)),
      "the merged Max column is gone - ask and sold stand separately");
   ok(heads.length === 12, `the table has 12 columns (${heads.length})`);
@@ -360,105 +449,131 @@ if (opts().length) pick(0);
       const mean = Math.round((noAsk.c.reduce((a, b) => a + b, 0) / noAsk.c.length) * 100) / 100;
       /* Nothing listed: the ask borrows the card's own sold average so the pile
          does not silently lose value, and the cell says where it came from. */
-      ok(cell(r, 3).startsWith(money(mean)),
-         `${noAsk.n} borrows its sold average as an ask (${money(mean)})`);
-      ok(/from sold avg/i.test(cell(r, 3)), "the cell labels the borrowed ask");
+      /* Nothing listed: the ask comp borrows the sold comp so the pile does not
+         silently lose value, and the cell says where the number came from. */
+      ok(histVals(r, 3).length === 0, `${noAsk.n} has no asks to show`);
+      ok(compVal(r, 5) === noAsk.c[0],
+         `its ask comp borrows the sold comp (${headline(r, 5)})`);
+      ok(/from sold/i.test(cell(r, 5)), "the cell labels the borrowed ask");
       ok(!!r.querySelector(".deck__sub"), "the label is its own element, not bare text");
-      ok(cell(r, 5) === money(mean), "it now contributes to the ask total");
-      ok(cell(r, 5) === cell(r, 6), "ask and sold totals match on a borrowed ask");
-      ok(cell(r, 10) === cell(r, 6), "the comped value equals both when the ask was borrowed");
+      ok(compVal(r, 5) === compVal(r, 6), "ask and sold comps match on a borrowed ask");
+      ok(cell(r, 10) === money(noAsk.c[0]),
+         "the comped value equals both when the ask was borrowed");
       ok(/falls back to its sold average/.test(doc.getElementById("decknote").textContent),
          "the note explains the fallback");
     }
   }
 }
 
-// --- saved lists -----------------------------------------------------------
-/* A saved list must hold ids and quantities and NOT prices: the board is
-   rebuilt on every pull, so a list that carried its own numbers would load
-   showing figures that disagree with the rest of the page. */
+// --- saved trades ----------------------------------------------------------
+/* A saved trade is the opposite of a saved deck list. A list holds ids and
+   quantities so that loading it re-prices against today's board; a trade must
+   FREEZE its numbers, because what a card is worth next month does not change
+   what was agreed today. This block exists to hold that line: it checks the
+   stored record carries prices, and that they survive a change in the live
+   board rather than tracking it. */
 {
   const nameBox = doc.getElementById("deckName");
   const saveBtn = doc.getElementById("deckSave");
   const savedList = doc.getElementById("deckSavedList");
   const savedNote = doc.getElementById("deckSavedNote");
   const click = (el) => el.dispatchEvent(new win.MouseEvent("click", { bubbles: true }));
-  ok(!!nameBox && !!saveBtn && !!savedList, "saved-list panel is present");
-  ok(/No saved lists yet/.test(savedList.textContent), "empty state before anything is saved");
+  const clear = () => doc.getElementById("deckClear")
+    .dispatchEvent(new win.MouseEvent("click", { bubbles: true }));
+  const stored = () => JSON.parse(win.localStorage.getItem("riftbound.trades.v1") || "[]");
 
-  // refuses to save nothing, and refuses to save without a name
-  doc.getElementById("deckClear").dispatchEvent(new win.MouseEvent("click", { bubbles: true }));
+  win.localStorage.removeItem("riftbound.trades.v1");
+  clear();
+  ok(!!nameBox && !!saveBtn && !!savedList, "save-trade panel is present");
+
+  // an empty board has no deal to record
   click(saveBtn);
-  ok(/list is empty/.test(savedNote.textContent), "saving an empty list is refused");
+  ok(/both sides are empty/i.test(savedNote.textContent), "saving with nothing on either side is refused");
+  ok(stored().length === 0, "and nothing is written");
 
+  // a trade needs no name - the date and time are the record
   type("yasuo");
   pick(0);
-  type("teemo");
-  if (opts().length) pick(0);
-  const built = deckRows().length;
+  const rowName = deckRows()[0].querySelector(".card").childNodes[0].textContent.trim();
+  const rowValue = parseFloat(cell(deckRows()[0], 10).replace(/[^0-9.]/g, ""));
+  nameBox.value = "Marcus at locals";
   click(saveBtn);
-  ok(/name it first|Give the list a name/i.test(savedNote.textContent),
-     "saving without a name is refused");
 
-  // save it
-  nameBox.value = "Sell pile";
-  click(saveBtn);
-  ok(/saved/i.test(savedNote.textContent), "naming it and saving works");
-  ok(savedList.querySelectorAll(".deck__deck").length === 1, "it appears in the saved panel");
-  ok(/Sell pile/.test(savedList.textContent), "under the name given");
+  const list = stored();
+  ok(list.length === 1, `saving records the trade (${list.length})`);
+  const t = list[0];
+  ok(t.who === "Marcus at locals", `under who it was with (${t.who})`);
+  ok(!!t.at && !!t.when, `stamped with the date and time (${t.when})`);
+  ok(/\d{4}-\d{2}-\d{2}T/.test(t.at), "the stamp is a real timestamp, not a label");
+  ok(t.pulled === (snap.pulledLabel || snap.pulled),
+     `and with the vintage of the prices it used (${t.pulled})`);
+
+  // the deal itself, frozen
+  ok((t.yours.rows || []).length === 1, "your side is recorded");
+  const rec = t.yours.rows[0];
+  ok(rec.n === rowName, `the card is named (${rec.n})`);
+  ok(rec.value === rowValue, `at the value it was comped to (${rec.value})`);
+  ok(rec.price != null && rec.ask != null, "with the price and the ask behind it");
+  ok(rec.comp === "max" && rec.askMode === "latest",
+     `and the choices that produced them (${rec.comp}/${rec.askMode})`);
+  ok(Math.abs(t.yours.total - rowValue) < 0.005, `the side total is stored (${t.yours.total})`);
+  ok(typeof t.diff === "number", `and the difference (${t.diff})`);
+
+  /* The freeze, tested rather than asserted: change the live row, and the
+     stored record must not move with it. */
+  const pct = deckRows()[0].querySelector(".deck__pct");
+  set(pct, "50");
+  const after = parseFloat(cell(deckRows()[0], 10).replace(/[^0-9.]/g, ""));
+  ok(after !== rowValue, "changing the live row moves the calculator");
+  ok(stored()[0].yours.rows[0].value === rowValue,
+     "but the saved trade keeps the price it was saved at");
+  set(pct, "100");
+
+  ok(savedList.querySelectorAll(".deck__deck").length === 1, "the panel lists it");
+  ok(/Marcus at locals/.test(savedList.textContent), "by name");
   ok(nameBox.value === "", "the name box clears after saving");
 
-  // what actually got persisted
-  const raw = win.localStorage.getItem("riftbound.decks.v1");
-  ok(!!raw, "the list is written to storage");
-  const parsed = JSON.parse(raw);
-  ok(parsed.length === 1 && parsed[0].name === "Sell pile", "stored under its name");
-  const keys = new Set(parsed[0].cards.flatMap((c) => Object.keys(c)));
-  ok([...keys].every((k) => k === "id" || k === "q"),
-     `stored cards hold only id and q (${[...keys].join(",")})`);
-  ok(!/\$|"a"|"avg"|price/.test(JSON.stringify(parsed[0].cards)),
-     "no prices are stored - the list re-prices on load");
+  // --- the history tab --------------------------------------------------
+  const histTab = [...doc.querySelectorAll(".tab")]
+    .find((x) => x.textContent.trim() === "Trade History");
+  ok(!!histTab, "there is a Trade History tab");
+  ok([...doc.querySelectorAll(".tab")].indexOf(histTab) ===
+     [...doc.querySelectorAll(".tab")].findIndex((x) => x.textContent.trim() === "Trade Calculator") + 1,
+     "sitting directly right of the Trade Calculator");
+  histTab.dispatchEvent(new win.Event("click", { bubbles: true }));
+  ok(doc.getElementById("p-hist").classList.contains("is-on"), "its panel opens");
 
-  // loading replaces whatever is in the builder
-  type("astral heron");
-  if (opts().length) pick(0);
-  const beforeLoad = deckRows().length;
-  ok(beforeLoad === built + 1, "builder has an extra card before loading");
-  click(savedList.querySelector("[data-load]"));
-  ok(deckRows().length === built,
-     `loading replaces the current list rather than appending (${deckRows().length})`);
-  ok(/loaded and re-priced/.test(savedNote.textContent), "the note says it was re-priced");
+  const cards = doc.querySelectorAll("#histList .hist__card");
+  ok(cards.length === 1, `the trade is listed (${cards.length})`);
+  ok(/Marcus at locals/.test(cards[0].textContent), "with who it was with");
+  ok(new RegExp(rowName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).test(cards[0].textContent),
+     "and the cards that were in it");
+  ok(/Yours/.test(cards[0].textContent) && /Theirs/.test(cards[0].textContent),
+     "both sides are shown");
+  ok(/pulled/.test(cards[0].textContent), "and the price vintage it was struck against");
 
-  // loaded rows carry live prices, not stored ones
-  {
-    const r = deckRows()[0];
-    const name = r.querySelector(".card").childNodes[0].textContent.trim();
-    const card = all.find((c) => c.n === name);
-    if (card && card.a != null) {
-      ok(headline(r, 3) === money(card.a),
-         `a loaded row is priced from the current snapshot (${headline(r, 3)})`);
-    }
-  }
-
-  // saving the same name again updates rather than duplicating
-  nameBox.value = "Sell pile";
+  // a second trade stacks newest first rather than overwriting
+  const calcTab = [...doc.querySelectorAll(".tab")]
+    .find((x) => x.textContent.trim() === "Trade Calculator");
+  calcTab.dispatchEvent(new win.Event("click", { bubbles: true }));
+  nameBox.value = "Second deal";
   click(saveBtn);
-  ok(savedList.querySelectorAll(".deck__deck").length === 1, "re-saving a name updates in place");
-  ok(/updated/i.test(savedNote.textContent), "and says so");
+  ok(stored().length === 2, "a second trade is added, not merged");
+  ok(stored()[0].who === "Second deal", "newest first");
 
-  // a name with markup in it must not break the panel
-  nameBox.value = '<img src=x onerror=1>';
-  click(saveBtn);
-  ok(savedList.querySelectorAll("img").length === 0, "a name containing markup is escaped");
-  ok(savedList.querySelectorAll(".deck__deck").length === 2, "and still saves as a second list");
+  histTab.dispatchEvent(new win.Event("click", { bubbles: true }));
+  ok(doc.querySelectorAll("#histList .hist__card").length === 2, "both appear in the history");
 
-  // delete
-  click(savedList.querySelector("[data-drop]"));
-  ok(savedList.querySelectorAll(".deck__deck").length === 1, "delete removes one list");
-  click(savedList.querySelector("[data-drop]"));
-  ok(/No saved lists yet/.test(savedList.textContent), "deleting the last one restores the empty state");
-  ok(JSON.parse(win.localStorage.getItem("riftbound.decks.v1")).length === 0,
-     "storage is emptied too");
+  // delete one, then clear
+  click(doc.querySelector("#histList [data-drop]"));
+  ok(stored().length === 1, "a trade can be deleted");
+  click(doc.getElementById("histClear"));
+  ok(stored().length === 0, "and the history cleared");
+  ok(/No trades saved yet/.test(doc.getElementById("histList").textContent),
+     "leaving the empty state");
+
+  calcTab.dispatchEvent(new win.Event("click", { bubbles: true }));
+  clear();
 }
 
 // --- trade side -------------------------------------------------------------
@@ -467,7 +582,6 @@ if (opts().length) pick(0);
    actually sell for - that disagreement is the reason to look. */
 {
   const click = (el) => el.dispatchEvent(new win.MouseEvent("click", { bubbles: true }));
-  const set = (el, v) => { el.value = v; el.dispatchEvent(new win.Event("input", { bubbles: true })); };
   const pickIn = (sugId) => {
     const o = doc.querySelector("#" + sugId + " .deck__opt");
     if (o) o.dispatchEvent(new win.MouseEvent("mousedown", { bubbles: true }));
@@ -499,6 +613,15 @@ if (opts().length) pick(0);
   /* One comparison, on the comped value: each row states the basis and the
      percentage it is comped at, so a three-basis summary would be answering a
      question the rows have already settled. */
+  /* Each side opens arguing its own book: yours at the higher of the two comps,
+     theirs at the lower. Both are one click from the other, but the opening
+     position is the one a trade actually starts from. */
+  {
+    const mine = sideRows("deckbody")[0].querySelector(".deck__comp");
+    const yours = sideRows("tradebody")[0].querySelector(".deck__comp");
+    ok(mine.value === "max", `your side defaults to Max (${mine.value})`);
+    ok(yours.value === "min", `their side defaults to Min (${yours.value})`);
+  }
   ok(/comped value/i.test(sum()), "the summary is the comped comparison");
   const diffs = () => [...doc.querySelectorAll("#tradesum .trade__d")].map((e) => e.textContent.trim());
   ok(diffs().length === 1, `a single difference (${diffs()[0]})`);
@@ -568,8 +691,8 @@ if (opts().length) pick(0);
     // Manual is offered as a choice in its own right
     const choices = [...sideRows("deckbody")[0].querySelectorAll(".deck__comp option")]
       .map((o) => o.textContent.trim());
-    ok(choices.join(",") === "Ask,Sold,Max,Manual",
-       `the choices are Ask, Sold, Max and Manual (${choices.join(", ")})`);
+    ok(choices.join(",") === "Ask,Sold,Max,Min,Manual",
+       `the choices are Ask, Sold, Max, Min and Manual (${choices.join(", ")})`);
   }
 
   click(doc.getElementById("tradeClear"));

@@ -7,42 +7,50 @@ ROOT = _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__)))
 WORK = _os.environ.get("RIFTBOUND_WORK") or _os.path.join(ROOT, ".pullcache")
 _os.makedirs(WORK, exist_ok=True)
 _sys.path.insert(0, _os.path.dirname(_os.path.abspath(__file__)))
-"""Pull a whole Playables set into merge_set.py's transfer format.
+"""Pull the Promos & Extras section into merge_extras.py's transfer format.
 
-    venv/bin/python pull_set.py unleashed Unleashed
+    venv/bin/python pull_extras.py
 
-Writes set_<slug>_pull.txt, one line per card, resumable - an interrupted run
+Writes extras_pull.txt and extras_list.json, resumable - an interrupted run
 picks up where it stopped rather than refetching.
 
-    id~name~rarity~ask~weeks~first~last~lo~hi~qLow~qHigh~qMarket~sales~asks
+Why this exists: the section was pulled once by hand when it was built and then
+never again. refresh.sh knew nothing about it, so while every other tab moved
+daily these 401 promos, alternate arts and metal cards kept whatever price they
+had on the day they were added. They are in the Trade Calculator now, which
+makes a stale price an actively wrong one rather than a merely old one.
 
-`asks` is the cheapest five qualifying asks as `card:delivered` pairs, ordered
-by DELIVERED price, and its first card price is `ask` itself. It comes off the
-listing feed already fetched for the ask, so it costs no extra request. Ordering
-by delivered is what stops one seller's $19.99 shipping inventing a floor - see
-card_lib.clean_asks.
-
-`weeks` is the number of packed BINS (12 for catalog cards), not the number of
-real weeks; `first`/`last` carry the real span so the month axis stays honest.
+The id list comes from the stored snapshot rather than from a fresh
+enumeration: this section is defined by subtraction - everything the other tabs
+do not carry - so the snapshot is what knows its membership. New promos are
+added by re-running the enumeration that built it, not by this script.
 """
-import json, os, sys, time
+import json, os, time
 from card_lib import ask_and_printing, ask_depth, history, sales, downsample, pack, listings
 
 HERE = WORK
 BINS = 12
 
-slug, display = sys.argv[1], sys.argv[2]
-cards = json.load(open(os.path.join(HERE, f"set_{slug}.json")))
-out_path = os.path.join(HERE, f"set_{slug}_pull.txt")
+snap = json.load(open(os.path.join(ROOT, "snapshot.json")))
+cards, listing = [], []
+for g in snap.get("extras") or []:
+    for c in (g.get("cards") or []):
+        cards.append(c)
+        listing.append({"id": c["id"], "n": c["n"], "r": c.get("r"),
+                        "num": c.get("num"), "set": c.get("src") or g.get("set")})
 
+list_path = os.path.join(HERE, "extras_list.json")
+json.dump(listing, open(list_path, "w"))
+
+out_path = os.path.join(HERE, "extras_pull.txt")
 done = set()
 if os.path.exists(out_path):
     for line in open(out_path).read().splitlines():
         if line.strip():
             done.add(int(line.split("~")[0]))
-    print(f"resuming {slug}: {len(done)} of {len(cards)} already pulled", flush=True)
+    print(f"resuming extras: {len(done)} of {len(cards)} already pulled", flush=True)
 
-print(f"{display}: {len(cards)} cards", flush=True)
+print(f"Promos & Extras: {len(cards)} cards", flush=True)
 failed = []
 with open(out_path, "a") as fh:
     for n, c in enumerate(cards, 1):
@@ -62,30 +70,30 @@ with open(out_path, "a") as fh:
             print(f"  FAIL {pid} {c['n']}: {str(e)[:60]}", flush=True)
             continue
 
+        name = str(c["n"]).replace("~", "-")
         if len(weeks) >= 2:
             L, H, M = downsample(lo, hi, mk, BINS)
             allv = L + H + M
             b_lo, b_hi = round(min(allv), 2), round(max(allv), 2)
-            nb = len(L)
-            fields = [str(pid), c["n"].replace("~", "-"), c["r"] or "",
-                      "" if ask is None else f"{ask}", str(nb), weeks[0], weeks[-1],
+            fields = [str(pid), name, c.get("r") or "",
+                      "" if ask is None else f"{ask}", str(len(L)), weeks[0], weeks[-1],
                       f"{b_lo}", f"{b_hi}",
                       pack(L, b_lo, b_hi), pack(H, b_lo, b_hi), pack(M, b_lo, b_hi),
                       ",".join(f"{v}" for v in sl),
-                      ",".join(f"{c}:{d}" for c, d in asks)]
+                      ",".join(f"{a}:{d}" for a, d in asks)]
         else:
             # No usable Near Mint English history - ship the card anyway so the
             # row exists with its ask and sales, and let the chart fall back.
-            fields = [str(pid), c["n"].replace("~", "-"), c["r"] or "",
+            fields = [str(pid), name, c.get("r") or "",
                       "" if ask is None else f"{ask}", "0", "", "", "", "",
                       "", "", "", ",".join(f"{v}" for v in sl),
-                      ",".join(f"{c}:{d}" for c, d in asks)]
+                      ",".join(f"{a}:{d}" for a, d in asks)]
 
         fh.write("~".join(fields) + "\n"); fh.flush()
         if n % 25 == 0:
             print(f"  {n}/{len(cards)}", flush=True)
         time.sleep(0.25)
 
-print(f"{display} done. failures: {len(failed)}", flush=True)
+print(f"extras done. failures: {len(failed)}", flush=True)
 for pid, e in failed[:10]:
     print("   ", pid, e, flush=True)

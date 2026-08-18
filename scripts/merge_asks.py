@@ -4,7 +4,7 @@
     python3 merge_asks.py ask_pull.txt snapshot.json snapshot.out.json
 
 Line format, one per product:
-    id|ask|printing|nQualifying|nSeen|p,p,p,p,p
+    id|ask|printing|nQualifying|nSeen|card:delivered,card:delivered,...
     id|none|-|0|nSeen|             (nothing qualifying is listed right now)
 
 The last field is the ask depth - the cheapest five qualifying asks, ascending,
@@ -45,12 +45,22 @@ def parse(path):
             bad.append(f"line {n}: {len(p)} fields, expected 6")
             continue
         pid = int(p[0])
-        depth = [round(float(x), 2) for x in p[5].split(",") if x.strip()]
+        depth, delivered = [], []
+        for part in p[5].split(","):
+            part = part.strip()
+            if not part:
+                continue
+            if ":" not in part:
+                bad.append(f"line {n} (id {pid}): ask {part!r} is not a card:delivered pair")
+                continue
+            c, d = part.split(":", 1)
+            depth.append(round(float(c), 2))
+            delivered.append(round(float(d), 2))
         if p[1] == "none":
             if depth:
                 bad.append(f"line {n} (id {pid}): no ask but a depth of {depth}")
                 continue
-            out[pid] = (None, [])
+            out[pid] = (None, [], [])
             continue
         try:
             ask = float(p[1])
@@ -63,15 +73,17 @@ def parse(path):
         if len(depth) > 5:
             bad.append(f"line {n} (id {pid}): {len(depth)} asks, depth caps at 5")
             continue
-        if depth != sorted(depth) or any(v <= 0 for v in depth):
-            bad.append(f"line {n} (id {pid}): depth is not ascending and positive: {depth}")
+        # Ordered by DELIVERED price - card prices legitimately run out of order,
+        # because shipping differs by seller.
+        if delivered != sorted(delivered) or any(v <= 0 for v in depth):
+            bad.append(f"line {n} (id {pid}): depth is not ordered by delivered price: {depth}/{delivered}")
             continue
         # The headline ask must be the first of its own depth list, or the cell
         # would name a price that no listing shown beneath it matches.
         if depth and abs(depth[0] - ask) > 0.005:
-            bad.append(f"line {n} (id {pid}): ask {ask} is not the cheapest of {depth}")
+            bad.append(f"line {n} (id {pid}): ask {ask} is not the first of {depth}")
             continue
-        out[pid] = (ask, depth)
+        out[pid] = (ask, depth, delivered)
     return out, bad
 
 
@@ -111,12 +123,13 @@ def main():
         return 1
 
     changed, cleared, moves, deep = 0, 0, [], 0
-    for pid, (ask, depth) in asks.items():
+    for pid, (ask, depth, delivered) in asks.items():
         section, setname, c = cards[pid]
         old = c.get("a")
         # The depth always lands, even when the ask itself has not moved: the
         # listings behind an unchanged cheapest price move constantly.
         c["a5"] = depth
+        c["a5d"] = delivered
         if len(depth) >= 2:
             deep += 1
         if old == ask:

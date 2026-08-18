@@ -98,13 +98,28 @@ def listings(pid):
 
 
 def clean_asks(rows):
-    """(ascending card-only prices, printing) for the qualifying listings.
+    """([(card price, delivered price)] cheapest-delivered first, printing).
 
     The filter chain lives here once so the ask and the ask depth can never
     disagree. That matters more than it looks: the whole point of showing five
     asks is to say whether the cheapest is a lone undercut, and a depth list
     filtered any more loosely would seat a Chinese copy at position two, under
     the English ones - the exact failure the ask column was fixed for.
+
+    ORDERED BY DELIVERED PRICE, REPORTED AS CARD PRICE. Those are two different
+    decisions and both are deliberate.
+
+    Ranking by card price alone let one seller invent a floor: Salvage showed an
+    ask of $2.99 against a real cheapest of $4.99, because a $2.99 listing
+    carried $19.99 shipping. Nobody can buy that card for $2.99, so it is not a
+    price - and it sat under 82 real listings. Sorting by what a buyer actually
+    pays is also what TCGplayer's own "from $X" does.
+
+    The reported number stays the card price, because the whole board is on that
+    basis: shipping is roughly flat, so including it pinned 738 of 929 asks
+    between $1.40 and $1.75 and made every cheap common look identical. The
+    delivered price travels alongside rather than replacing it, so the two are
+    never mixed in one column and either can be shown without a re-pull.
     """
     ok = [l for l in rows
           if l.get("condition") == "Near Mint"
@@ -115,25 +130,33 @@ def clean_asks(rows):
     normals = [l for l in ok if l.get("printing") == "Normal"]
     pick = normals if normals else ok
     printing = "Normal" if normals else (pick[0].get("printing") or "Foil")
-    price = lambda l: round(float(l.get("price", 0)), 2)   # card only, no shipping
-    return sorted(price(l) for l in pick), printing
+
+    def pair(l):
+        card = round(float(l.get("price", 0)), 2)
+        ship = float(l.get("shippingPrice") or 0)
+        return (card, round(card + ship, 2))
+
+    pairs = [pair(l) for l in pick]
+    pairs.sort(key=lambda t: (t[1], t[0]))          # by delivered, then by card
+    return pairs, printing
 
 
 def ask_and_printing(pid, rows=None):
     """(ask, printing). Printing is decided here and reused by history+sales."""
-    prices, printing = clean_asks(listings(pid) if rows is None else rows)
-    return (prices[0] if prices else None), printing
+    pairs, printing = clean_asks(listings(pid) if rows is None else rows)
+    return (pairs[0][0] if pairs else None), printing
 
 
 def ask_depth(rows, depth=5):
-    """The cheapest few qualifying asks, ascending - the cheapest one first.
+    """The cheapest few qualifying asks as (card, delivered) pairs.
 
     Takes rows the caller already fetched rather than fetching its own, so depth
     costs no extra request: every pull already has the listing feed in hand when
     it works out the ask.
     """
-    prices, _ = clean_asks(rows)
-    return prices[:depth]
+    pairs, _ = clean_asks(rows)
+    return pairs[:depth]
+
 
 
 # ---------------------------------------------------------------- history

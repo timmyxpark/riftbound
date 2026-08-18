@@ -70,8 +70,10 @@ ok(rows("extrabody") === EXTRA_ROWS,
    `promos & extras table has ${rows("extrabody")} card rows (expect ${EXTRA_ROWS})`);
 {
   const tabs = [...doc.querySelectorAll(".tab")].map((t) => t.textContent.trim());
-  ok(tabs[3] === "Promos & Extras",
-     `the new tab sits after Overnumbered (${tabs.slice(1, 5).join(" | ")})`);
+  ok(tabs[3] === "Promos & Alt Arts",
+     `the promo tab sits after Overnumbered (${tabs.slice(1, 5).join(" | ")})`);
+  ok(tabs[1] === "Signature Overnumbered",
+     `the signature tab is named in full (${tabs[1]})`);
 }
 {
   // it renders through the signature renderer, so it must chart the same way
@@ -96,19 +98,23 @@ ok(rows("extrabody") === EXTRA_ROWS,
   ok(numbered > EXTRA_ROWS * 0.9,
      `rows carry the card number, which identifies an artless promo (${numbered}/${EXTRA_ROWS})`);
 
-  // default sort is price, highest first, with unpriced cards last
-  const asks = [...doc.querySelectorAll("#extrabody tr")]
+  /* Default sort is the LAST SALE, dearest first: an ask is one seller's
+     opinion, a sale is what somebody actually paid. Cards with no sale sink to
+     the bottom in either direction - the absence of a sale is not a low one. */
+  const lastSold = [...doc.querySelectorAll("#extrabody tr")]
     .filter((r) => !r.querySelector("td[colspan]"))
     .map((r) => {
-      const t = r.querySelectorAll("td")[3].textContent.trim();
-      return /^\$/.test(t) ? parseFloat(t.replace(/[^0-9.]/g, "")) : null;
+      const cell = r.querySelector("td.sales");
+      const first = cell && cell.querySelector("div");
+      const t = first ? first.textContent.trim() : "";
+      return /^\$?[\d,]/.test(t) ? parseFloat(t.replace(/[^0-9.]/g, "")) : null;
     });
-  const priced = asks.filter((v) => v !== null);
-  ok(priced.length > 0 && priced.every((v, i) => i === 0 || priced[i - 1] >= v),
-     `defaults to price descending (top ${priced.slice(0, 3).map((v) => "$" + v).join(", ")})`);
-  const firstNull = asks.indexOf(null);
-  ok(firstNull === -1 || asks.slice(firstNull).every((v) => v === null),
-     "cards with no ask sort to the end, not the top");
+  const soldOnly = lastSold.filter((v) => v !== null);
+  ok(soldOnly.length > 0 && soldOnly.every((v, i) => i === 0 || soldOnly[i - 1] >= v),
+     `defaults to last sold descending (top ${soldOnly.slice(0, 3).map((v) => "$" + v).join(", ")})`);
+  const firstNull = lastSold.indexOf(null);
+  ok(firstNull === -1 || lastSold.slice(firstNull).every((v) => v === null),
+     "cards with no recorded sale sort to the end, not the top");
   ok(doc.querySelectorAll("#extrasort .chip--x").length >= 4,
      `sort control offers ${doc.querySelectorAll("#extrasort .chip--x").length} orders`);
 }
@@ -134,6 +140,32 @@ ok(catCells === 7, `catalog rows have ${catCells} cells (expect 7)`);
   ok(doc.querySelectorAll("#sigbody tr.setrow").length === 0, "nor in the signature table");
 }
 
+/* Every card section opens on the same default - last sale, dearest first.
+   This runs before anything clicks a heading, so it sees the state the page
+   loads in rather than whatever a previous block left behind. */
+{
+  const opens = (panel, body) => {
+    const th = [...doc.querySelectorAll(`#${panel} thead th[data-sort]`)]
+      .find((h) => h.classList.contains("is-sorted"));
+    const sold = [...doc.querySelectorAll(`#${body} tr`)]
+      .filter((r) => !r.querySelector("td[colspan]"))
+      .map((r) => {
+        const first = r.querySelector("td.sales div");
+        const t = first ? first.textContent.trim() : "";
+        return /^\$?[\d,]/.test(t) ? parseFloat(t.replace(/[^0-9.]/g, "")) : null;
+      })
+      .filter((v) => v !== null);
+    ok(!!th && th.getAttribute("data-sort") === "sold",
+       `${panel} opens sorted by last sold (${th ? th.textContent.trim() : "nothing marked"})`);
+    ok(sold.length > 0 && sold.every((v, i) => i === 0 || sold[i - 1] >= v),
+       `  dearest first (${sold.slice(0, 3).map((v) => "$" + v).join(", ")})`);
+  };
+  opens("p-sig", "sigbody");
+  opens("p-over", "overbody");
+  opens("p-extra", "extrabody");
+  opens("p-cat", "catbody");
+}
+
 /* Sorting: the headings have to actually reorder the table, and unpriced cards
    have to stay at the bottom in both directions rather than leading an
    ascending sort with the absence of a price. */
@@ -146,8 +178,11 @@ ok(catCells === 7, `catalog rows have ${catCells} cells (expect 7)`);
       const t = r.querySelectorAll("td")[4].textContent.trim();
       return /^\$/.test(t) ? parseFloat(t.replace(/[^0-9.]/g, "")) : null;
     });
+  /* Sold is the default column now, so ask has to be chosen before it can be
+     checked - the first click on a number column opens it descending. */
+  th.dispatchEvent(new win.MouseEvent("click", { bubbles: true }));
   const desc = asks().filter((v) => v !== null);
-  ok(desc.every((v, i) => i === 0 || desc[i - 1] >= v), `ask sorts high to low by default ($${desc[0]})`);
+  ok(desc.every((v, i) => i === 0 || desc[i - 1] >= v), `ask sorts high to low when picked ($${desc[0]})`);
   th.dispatchEvent(new win.MouseEvent("click", { bubbles: true }));
   const after = asks();
   const asc = after.filter((v) => v !== null);

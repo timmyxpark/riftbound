@@ -395,8 +395,33 @@ Catalog cards, packed as before - two digits per week, 0-99:
 
     "lo": 3.49, "hi": 22.98        min and max across ALL THREE series
     "ql": "...", "qh": "...", "qm": "..."
-    "c":  [4.51, 4.60, ...]        last 5 sales, NEWEST first
-    "a5": [4.20, 4.35, ...]        cheapest 5 asks, CHEAPEST first
+    "c":   [4.51, 4.60, ...]       last 5 sales, NEWEST first
+    "a5":  [3.50, 3.75, 3.25, ...] 5 cheapest asks, card price
+    "a5d": [4.99, 5.24, 5.25, ...] the same 5 listings, DELIVERED
+
+## The ask was ordered by the wrong number - Salvage, Aug 18 2026
+
+Salvage showed an ask of $2.99 against a real cheapest of $4.99. Nothing was
+wrong with the filter chain: the $2.99 listing was Near Mint, English, raw,
+Normal, untitled - clean by every rule. It carried **$19.99 shipping**. Nobody
+could buy that card for $2.99, and it sat under 82 real listings.
+
+The fix is not another filter. It is that SELECTION and REPORTING are two
+different decisions:
+
+  * **selection** ranks by DELIVERED price (card + that seller's shipping),
+    which is what a buyer pays and what TCGplayer's own "from $X" sorts by;
+  * **reporting** stays the card price, because shipping is roughly flat and
+    folding it in pinned 738 of 929 asks between $1.40 and $1.75.
+
+So `a5` is no longer ascending and must not be validated as if it were - a
+$3.25 card behind $2.00 shipping sits below a $3.50 card behind $1.49. `a5d` is
+the ordered series, and the merges check THAT. Assuming `a5` ascends is the
+exact assumption that let the $19.99 listing lead.
+
+Both numbers are stored so the displayed basis can change without a re-pull.
+The Trade Calculator has a chip to switch between them; everything else stays on
+the card price.
 
 The two lists run in opposite orders and neither may be sorted on the way to the
 screen. `c` is chronological - re-sorting it turns a card falling from $80 to

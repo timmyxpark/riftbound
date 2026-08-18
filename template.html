@@ -589,34 +589,30 @@
                font-variant-numeric: tabular-nums; white-space: nowrap; }
   .deck__tot.sold { color: #5FD39A; }
 
-  /* The fold-out behind a price. The trigger has to read as a control without
-     competing with the number above it, so it is small, quiet and underlined
-     on hover rather than boxed. */
-  .deck__more { display: block; margin-top: 3px; border: 0; background: none;
-                padding: 0; cursor: pointer; font-family: "Inter", system-ui, sans-serif;
-                font-size: 9px; font-weight: 700; letter-spacing: 0.05em;
-                text-transform: uppercase; color: var(--peri); }
-  .deck__more:hover { text-decoration: underline; }
-  .deck__more:focus-visible { outline: 2px solid #8FA0DC; outline-offset: 2px; }
-  /* Swapping the glyph beats rotating it: a rotated triangle on a 9px line
-     lands half a pixel off and reads as a rendering fault. */
-  .deck__more::before { content: "\25B8"; margin-right: 3px; }
-  .deck__more[aria-expanded="true"]::before { content: "\25BE"; }
-  .deck__list { display: block; margin-top: 4px; padding: 5px 6px;
-                background: var(--card); border: 1px solid var(--grid2);
-                border-radius: 5px; text-align: right; }
-  .deck__list[hidden] { display: none; }
-  .deck__li { display: block; font-family: var(--mono); font-size: 11px;
-              font-variant-numeric: tabular-nums; color: var(--ink);
-              white-space: nowrap; line-height: 1.5; }
-  /* The rank sits left of its price so five prices read as a ranked list
-     rather than as one number wrapped over five lines. */
-  .deck__li i { float: left; font-style: normal; color: var(--faint);
-                font-size: 9px; padding-top: 1px; }
-  .deck__li b { font-weight: 600; }
-  .deck__lihint { display: block; margin-top: 3px; font-style: normal;
-                  font-family: "Inter", system-ui, sans-serif; font-size: 8.5px;
-                  letter-spacing: 0.04em; text-transform: uppercase; color: var(--faint); }
+  /* The history columns: up to five prices stacked in a narrow column, every
+     one of them on the page. A fold-out was tried first and was worse - a list
+     behind a click is read once and then never again, and the whole reason for
+     showing five is to see at a glance whether the first one is representative.
+     The head of each list is the one the Latest basis picks, so it leads. */
+  .deck__hist b { display: block; font-family: var(--mono); font-size: 11px;
+                  font-weight: 500; font-variant-numeric: tabular-nums;
+                  color: var(--soft); white-space: nowrap; line-height: 1.55; }
+  .deck__hist b.top { font-weight: 700; font-size: 12px; color: var(--ink); }
+
+  /* A comp cell is a number with the choice that produced it directly beneath,
+     so the two are read as one statement rather than as two columns that have
+     to be matched up by eye. */
+  .deck__compcell { white-space: nowrap; }
+  .deck__mode { display: block; width: 92px; margin: 4px auto 0;
+                font-family: "Inter", system-ui, sans-serif; font-size: 10px;
+                color: var(--soft); background: var(--card);
+                border: 1px solid var(--grid2); border-radius: 5px;
+                padding: 2px 3px; outline: none; }
+  .deck__mode:focus { border-color: var(--peri); box-shadow: 0 0 0 2px var(--peribg); }
+  .deck__modeval { width: 84px; font-family: var(--mono); font-size: 12.5px;
+                   font-weight: 700; text-align: center; color: var(--ink);
+                   background: var(--card); font-variant-numeric: tabular-nums;
+                   border: 1px solid var(--butter); border-radius: 5px; padding: 3px 2px; }
   /* Marks an ask that was borrowed from the card's own sold average, in the
      same amber the "hold" signal uses - it is a substitution, not a listing. */
   /* warns that the average includes a freak sale, in the same amber as the
@@ -659,24 +655,24 @@
      listings and five sales behind them. Scoped to thead/tbody on purpose: the
      footer's label cell carries a colspan, so nth-child would count it wrong
      and hide a total. */
-  .deck__sides.is-trade thead th:nth-child(6),
-  .deck__sides.is-trade tbody td:nth-child(6),
-  .deck__sides.is-trade thead th:nth-child(7),
-  .deck__sides.is-trade tbody td:nth-child(7) {
-    display: none;
-  }
+  /* Nothing stands down in trade mode any more: the two history columns and
+     the two comp columns are the argument, and hiding either half of it to buy
+     width would leave the choices with nothing visible to justify them. Width
+     comes from stacking the sides instead - see the breakpoint below. */
   .deck__sides.is-trade td.card { min-width: 128px; }
   .deck__sides > .side { flex: 1 1 0; min-width: 0; }
   @media (max-width: 1100px) {
     .deck__sides { flex-direction: column; }
     .deck__sides > .side { width: 100%; }
   }
-  /* Below this the pair genuinely does not fit, measured rather than guessed:
-     at 1280px their side still wants 612px against 600px of room. Stacking is
-     the honest answer - a table you have to scroll sideways to read is worse
-     than two tables you scroll past vertically, because the column you are
-     comparing against is the one that goes off-screen. */
-  @media (max-width: 1340px) {
+  /* Below this the pair genuinely does not fit, measured rather than guessed.
+     Twelve columns - two five-deep histories, two comps with their dropdowns,
+     the choice, the price, the percentage and the value - want about 890px a
+     side, so side by side needs roughly 1860px of window. Stacking is the
+     honest answer below that: a table you scroll sideways to read is worse than
+     two tables you scroll past vertically, because the column you are comparing
+     against is the one that goes off-screen. */
+  @media (max-width: 1860px) {
     .deck__sides.is-trade { flex-direction: column; }
     .deck__sides.is-trade > .side { width: 100%; }
   }
@@ -692,6 +688,37 @@
   /* Pushed to the far end of the row it lives in, so it reads as the control
      for the whole table rather than as a third slab field. */
   .chip--trade { margin-left: auto; }
+  .deck__basis { margin: 0 0 12px; }
+  .deck__basisnote { font-size: 11px; color: var(--faint); margin-left: 10px; }
+
+  /* ---- Trade History ---- */
+  .hist__tools { display: flex; align-items: center; gap: 12px; margin: 0 0 14px; }
+  .hist__count { font-size: 11px; color: var(--faint); }
+  .hist__card { background: var(--card); border: 1px solid var(--grid2); border-radius: 8px;
+                padding: 13px 14px; margin-bottom: 14px; }
+  .hist__head { display: flex; align-items: center; gap: 12px; margin-bottom: 11px; }
+  .hist__head b { font-size: 14px; }
+  .hist__when { font-size: 11px; color: var(--faint); }
+  .hist__head .trade__d { margin-left: auto; font-family: var(--mono); font-size: 13px; }
+  .hist__head .deck__x { margin-left: 4px; }
+  /* Two sides side by side while there is room, stacked when there is not -
+     a saved trade is read, not edited, so it can afford to wrap. */
+  .hist__sides { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  @media (max-width: 1100px) { .hist__sides { grid-template-columns: 1fr; } }
+  .hist__t { width: 100%; border-collapse: collapse; }
+  .hist__t th { font-size: 9px; font-weight: 600; letter-spacing: 0.06em;
+                text-transform: uppercase; color: var(--faint); text-align: center;
+                padding: 4px 6px; border-bottom: 1px solid var(--grid2); white-space: nowrap; }
+  .hist__t td { padding: 6px; text-align: center; border-bottom: 1px solid var(--grid);
+                font-size: 12px; }
+  .hist__t tfoot td { border-bottom: 0; }
+  /* The basis a row was comped on travels with the number, because a price
+     without the choice that produced it cannot be checked later. */
+  .hist__mode { display: block; font-size: 8.5px; letter-spacing: 0.04em;
+                text-transform: uppercase; color: var(--faint); margin-top: 1px; }
+  .hist__empty { font-size: 12px; color: var(--faint); padding: 10px 0; }
+  .hist__foot { margin-top: 10px; font-size: 10.5px; color: var(--faint); }
+  .deck__deck-when { font-size: 10px; color: var(--faint); }
 
   /* Sortable headings. The caret only appears on the column actually in use -
      an arrow on every heading is noise, and the one that matters stops being
@@ -894,11 +921,12 @@
   <div class="when" id="when"></div>
   <nav class="tabs" id="tabs" role="tablist">
     <button class="tab is-on" role="tab" aria-selected="true" data-panel="p-cases">Sealed</button>
-    <button class="tab" role="tab" aria-selected="false" data-panel="p-sig">Signature Overnumbers</button>
+    <button class="tab" role="tab" aria-selected="false" data-panel="p-sig">Signature Overnumbered</button>
     <button class="tab" role="tab" aria-selected="false" data-panel="p-over">Overnumbered</button>
-    <button class="tab" role="tab" aria-selected="false" data-panel="p-extra">Promos &amp; Extras</button>
+    <button class="tab" role="tab" aria-selected="false" data-panel="p-extra">Promos &amp; Alt Arts</button>
     <button class="tab" role="tab" aria-selected="false" data-panel="p-cat">Playables</button>
     <button class="tab" role="tab" aria-selected="false" data-panel="p-deck">Trade Calculator</button>
+    <button class="tab" role="tab" aria-selected="false" data-panel="p-hist">Trade History</button>
     <button class="tab" role="tab" aria-selected="false" data-panel="p-cal">Calendar</button>
   </nav>
 
@@ -1017,7 +1045,7 @@
 
   <section id="p-sig" class="tabpanel">
   <div class="sig">
-    <div class="sig__title">Signature Overnumbers</div>
+    <div class="sig__title">Signature Overnumbered</div>
     <div class="sig__sub">The signed artist editions - roughly one in ten Overnumbered cards is signed, about one per 360 packs. Every signature in every set, ranked by market price. A cheapest listing far under market is worth a second look before it is worth a bid.</div>
     <div class="ckey"></div>
     <div class="panel">
@@ -1070,7 +1098,7 @@
 
   <section id="p-extra" class="tabpanel">
   <div class="sig">
-    <div class="sig__title">Promos &amp; Extras</div>
+    <div class="sig__title">Promos &amp; Alt Arts</div>
     <div class="sig__sub">Everything the other tabs do not carry: Organized Play promos including the metal Prize Wall and Best Of cards, the alternate arts and showcase runes that the Playables classifier deliberately drops, Proving Grounds, Judge promos and Secret Garden. Same format as the signature tables - cheapest Near Mint English ask, card price only, and the last five real sales. Sorted rather than grouped, so every row carries its own rarity, card number and source: 180 of these have no art on TCGplayer at all, and the number is what tells a metal Prize Wall promo apart from the ordinary print.</div>
     <div class="setfilter" id="extrasort">
       <span class="setfilter__label">Sort</span>
@@ -1125,20 +1153,29 @@
     <div class="sig">
       <div class="sig__title">Trade Calculator</div>
       <div class="deck__top">
-      <div class="sig__sub">Build a list and price it against what is listed and what has actually sold. <b>Asking</b> is the cheapest Near Mint English copy listed, card price only, no shipping - what you would have to undercut to sell; a card with nothing listed borrows its own sold average instead of counting as zero, and the cell says so. <b>Avg Last 5 Sold</b> is the mean of that card's last five real sales - closer to what it actually moves for. Open either one to see the list behind it: the next five asks, cheapest first, and the last five sales, newest first. One cheap ask under four dear ones is a lone undercut, not a price, and that only shows when you can see all five.</div>
+      <div class="sig__sub">Price a deal against what is listed and what has actually sold. Each row shows both histories in full, picks a comp from each, then chooses between them. <b>Asking</b> is the cheapest Near Mint English copy, ordered by what a buyer actually pays so one seller's $19.99 shipping cannot invent a floor. Save a trade and it is stamped and frozen under <b>Trade History</b>.</div>
 
         <aside class="deck__saved">
-          <div class="deck__saved-head">Saved lists</div>
+          <div class="deck__saved-head">Save trade</div>
           <div class="deck__save-row">
-            <input type="text" id="deckName" placeholder="Name this list"
-                   aria-label="Name for the saved list" autocomplete="off" maxlength="40">
-            <button class="chip" id="deckSave">Save</button>
+            <input type="text" id="deckName" placeholder="Who, or where"
+                   aria-label="Who the trade was with" autocomplete="off" maxlength="60">
+            <button class="chip" id="deckSave">Save trade</button>
           </div>
-          <div id="deckSavedList"></div>
           <div class="deck__saved-note" id="deckSavedNote"></div>
-          <div class="deck__saved-foot">A saved list keeps card names and quantities, never prices - loading one re-prices it against whatever the board holds now.</div>
+          <div id="deckSavedList"></div>
+          <div class="deck__saved-foot">Stamped with the date and time and kept with the prices as
+            they stand now - a record of the deal, not a list to re-price. See them all under
+            <b>Trade History</b>.</div>
         </aside>
       </div><!-- /deck__top -->
+
+      <div class="setfilter deck__basis">
+        <span class="setfilter__label">Asking shown as</span>
+        <button class="chip chip--basis is-on" data-basis="card">Card price</button>
+        <button class="chip chip--basis" data-basis="delivered">Delivered</button>
+        <span class="deck__basisnote" id="basisnote"></span>
+      </div>
 
       <div class="deck__layout">
         <div class="deck__main">
@@ -1159,8 +1196,8 @@
               <table>
                 <thead>
                   <tr>
-                    <th></th><th>Qty</th><th>Card</th><th>Asking</th><th>Avg Last 5 Sold</th>
-                    <th>Ask total</th><th>Sold total</th>
+                    <th></th><th>Qty</th><th>Card</th><th>Asking history</th><th>Sales history</th>
+                    <th>Ask comp</th><th>Sold comp</th>
                     <th>Comp Choice</th><th>Price</th><th>%</th><th>Value</th><th></th>
                   </tr>
                 </thead>
@@ -1201,8 +1238,8 @@
                 <table>
                   <thead>
                     <tr>
-                      <th></th><th>Qty</th><th>Card</th><th>Asking</th><th>Avg Last 5 Sold</th>
-                      <th>Ask total</th><th>Sold total</th><th>Comp Choice</th><th>Price</th><th>%</th><th>Value</th><th></th>
+                      <th></th><th>Qty</th><th>Card</th><th>Asking history</th><th>Sales history</th>
+                      <th>Ask comp</th><th>Sold comp</th><th>Comp Choice</th><th>Price</th><th>%</th><th>Value</th><th></th>
                     </tr>
                   </thead>
                   <tbody id="tradebody"></tbody>
@@ -1230,6 +1267,21 @@
         </div>
 
       </div>
+    </div>
+  </section>
+
+  <section id="p-hist" class="tabpanel">
+    <div class="sig">
+      <div class="sig__title">Trade History</div>
+      <div class="sig__sub">Every trade saved from the calculator, newest first. A saved trade is a
+        record of a deal, not a list to re-price: it keeps the prices as they stood when you saved it,
+        the basis each row was comped on, and the date the board's prices were pulled. That is the
+        point - what a card is worth next month does not change what you agreed to today.</div>
+      <div class="hist__tools">
+        <button class="chip chip--reset" id="histClear">Clear history</button>
+        <span class="hist__count" id="histCount"></span>
+      </div>
+      <div id="histList"></div>
     </div>
   </section>
 
@@ -1387,13 +1439,14 @@ function nullsLast(av, bv, dir) {
   if (bn) return -1;
   return (av < bv ? -1 : av > bv ? 1 : 0) * dir;
 }
-/* Each section remembers its own column and direction. Price descending is the
-   default everywhere: the first question asked of any of these tables is what
-   the dear cards are. */
-var SORT = { sigbody:   { k: "ask", d: -1 },
-             overbody:  { k: "ask", d: -1 },
-             extrabody: { k: "ask", d: -1 },
-             catbody:   { k: "ask", d: -1 } };
+/* Each section remembers its own column and direction. Last sale, dearest
+   first, is the default everywhere: an ask is one seller's opinion, a sale is
+   what somebody actually paid, so it is the honest thing to rank a table by.
+   Cards with no recorded sale sink to the bottom rather than leading. */
+var SORT = { sigbody:   { k: "sold", d: -1 },
+             overbody:  { k: "sold", d: -1 },
+             extrabody: { k: "sold", d: -1 },
+             catbody:   { k: "sold", d: -1 } };
 
 function sortCards(cards, st) {
   var k = st.k, d = st.d;
@@ -2049,7 +2102,7 @@ var CHIP_SORTS = {
   }
   paintExtraChips = paint;
   repaintExtraSort = function () {
-    SORT.extrabody = { k: "ask", d: -1 };
+    SORT.extrabody = { k: "sold", d: -1 };
     paint();
     paintSort("extrabody");
   };
@@ -2264,7 +2317,8 @@ function drawAll() {
       /* The deck list is built by name across every set, so the set chips would
          do nothing there - same reasoning as the calendar. */
       if (setF) setF.style.display =
-        (panelId === "p-cal" || panelId === "p-deck" || panelId === "p-extra") ? "none" : "";
+        (panelId === "p-cal" || panelId === "p-deck" || panelId === "p-hist"
+         || panelId === "p-extra") ? "none" : "";
       var rarF = document.getElementById("rarityfilter");
       if (rarF) rarF.style.display = (panelId === "p-cat") ? "" : "none";
       var priF = document.getElementById("pricefilter");
@@ -2467,7 +2521,8 @@ function buildDeckIndex() {
                    nSales: (c.c || []).length, odd: saleOutlier(c.c),
                    /* The two lists behind the two headline numbers: a5 is the
                       cheapest asks ascending, c the last sales newest first. */
-                   a5: (c.a5 || []).slice(), sales: (c.c || []).slice(),
+                   a5: (c.a5 || []).slice(), a5d: (c.a5d || []).slice(),
+                   sales: (c.c || []).slice(),
                    /* What the chart already knows, carried along so the read-out
                       under the table can say which way a card has been moving
                       without redrawing it. */
@@ -2479,6 +2534,20 @@ function buildDeckIndex() {
   add(SEED.signatures, "Signature");
   add(SEED.overnumbered, "Overnumber");
   add(SEED.catalog, "Playable");
+  /* Promos, alternate arts and the metal cards. They are grouped by where they
+     were given out rather than by booster set, so the group name is already
+     the right thing to show beside them. */
+  (SEED.extras || []).forEach(function (g) {
+    (g.cards || []).forEach(function (c) {
+      out.push({ id: c.id, n: c.n, set: shortSource(c.src || g.set), section: "Promo",
+                 a: (c.a == null ? null : c.a), avg: avgSolds(c.c),
+                 nSales: (c.c || []).length, odd: saleOutlier(c.c),
+                 a5: (c.a5 || []).slice(), a5d: (c.a5d || []).slice(),
+                 sales: (c.c || []).slice(),
+                 first: c.f || null, last: c.l || null, trend: marketTrend(c),
+                 fold: foldName(c.n) });
+    });
+  });
   return out;
 }
 
@@ -2491,10 +2560,11 @@ var deckRows = [];
      until asked for, so the ordinary "what is my pile worth" case is unchanged. */
   var sideA = { rows: deckRows, cash: 0, box: el("deckInput"), sug: el("deckSuggest"),
                 body: el("deckbody"), foot: el("deckfoot"), note: el("decknote"),
-                read: el("deckread"), totals: null };
+                read: el("deckread"), defaultComp: "max", totals: null };
   var sideB = { rows: [], cash: 0, box: el("tradeInput"), sug: el("tradeSuggest"),
                 body: el("tradebody"), foot: el("tradefoot"), note: el("tradenote"),
-                read: el("traderead"), empty: "Nothing on their side yet.", totals: null };
+                read: el("traderead"), defaultComp: "min",
+                empty: "Nothing on their side yet.", totals: null };
   var tradeOn = false;
   if (!sideA.box || !sideA.sug || !sideA.body || !sideA.foot) return;
   var box = sideA.box, sug = sideA.sug, body = sideA.body, foot = sideA.foot, note = sideA.note;
@@ -2514,7 +2584,11 @@ var deckRows = [];
       if (at === 0) starts.push(e);
       else if (at > 0) inside.push(e);
     }
-    return starts.concat(inside).slice(0, 12);
+    /* The list scrolls, so the cap is only there to stop a one-letter query
+       rendering the whole catalog. Twelve was too tight: "ahri" has fourteen
+       printings across the four sections and two of them - both alternate arts
+       - fell off the end silently, which reads as the board not carrying them. */
+    return starts.concat(inside).slice(0, 40);
   }
 
   function renderSuggest() {
@@ -2544,45 +2618,10 @@ var deckRows = [];
      pile does not silently lose value. Only here - the Playables table still
      says "none listed", because there the ask is a fact about the market.
      The cell is labelled: an unlabelled number would read as a real listing. */
-  function askOf(e) { return e.a != null ? e.a : e.avg; }
-
-  /* The headline is wrapped so it can be read on its own. With a five-deep
-     list folded into the same cell, the cell's text is the headline followed by
-     every price under it, and anything comparing the two ends up comparing
-     "$1,900.00" against "$1,900.003 asks1$1,900.00...". */
+  /* The headline price is wrapped so it can be read on its own: a comp cell
+     holds a number and a dropdown, and anything comparing the two ends up
+     comparing "$1,900.00" against "$1,900.00Latest". */
   function now(v) { return '<span class="deck__now">' + money(v) + '</span>'; }
-  function askCell(e) {
-    if (e.a != null) return now(e.a);
-    if (e.avg == null) return '<span class="dim">no ask, no sales</span>';
-    return now(e.avg) + '<span class="deck__sub">from sold avg</span>';
-  }
-
-  /* One headline number never says whether it is representative. The cheapest
-     ask might be a lone undercut with the next copy 30% higher, and a sold
-     average of five can be four quiet sales and one spike. So each of the two
-     price cells folds out the list it was computed from - the next five asks,
-     cheapest first, and the last five sales, newest first. Folded by default:
-     the table is read a row at a time, not all at once. */
-  function detailList(r, i, kind) {
-    var vals = kind === "ask" ? (r.e.a5 || []) : (r.e.sales || []);
-    if (vals.length < 2) return "";
-    var open = !!(r.open && r.open[kind]);
-    var word = kind === "ask"
-      ? vals.length + (vals.length === 1 ? " ask" : " asks")
-      : vals.length + (vals.length === 1 ? " sale" : " sales");
-    /* The rank and the price are separate elements on purpose: glued together
-       they read fine but parse as one number, which is exactly how a test
-       reading the list back would compare "1" + "$78.00" against 78.00. */
-    var items = vals.map(function (v, n) {
-      return '<span class="deck__li"><i>' + (n + 1) + '</i><b>' + money(v) + '</b></span>';
-    }).join("");
-    return '<button type="button" class="deck__more" data-more="' + kind +
-             '" data-i="' + i + '" aria-expanded="' + (open ? "true" : "false") + '">' +
-             word + '</button>' +
-           '<span class="deck__list"' + (open ? "" : " hidden") + '>' + items +
-             '<i class="deck__lihint">' +
-             (kind === "ask" ? "cheapest first" : "newest first") + '</i></span>';
-  }
 
   function addCard(e, side) {
     if (!e) return;
@@ -2592,8 +2631,17 @@ var deckRows = [];
         side.rows[i].q += 1; renderDeck(); return;
       }
     }
-    side.rows.push({ e: e, q: 1, comp: "max", pct: 100 });
+    side.rows.push(newRow(e, side));
     renderDeck();
+  }
+
+  /* Your side defaults to Max and theirs to Min: each side argues its own book
+     up and the other's down, so those are the two openings a trade actually
+     starts from. Both are one click from the other. */
+  function newRow(e, side) {
+    return { e: e, q: 1, comp: (side && side.defaultComp) || "max",
+             askMode: "latest", soldMode: "latest",
+             askMp: null, soldMp: null, mp: null, pct: 100 };
   }
 
   /* A slab the board cannot price: the trader types what they agreed it is
@@ -2601,9 +2649,9 @@ var deckRows = [];
   function addSlab(side, name, value) {
     var v = parseFloat(value);
     if (!name || !(v > 0)) return false;
-    side.rows.push({ e: { manual: true, id: "slab-" + (++slabSeq), n: name,
-                          a: Math.round(v * 100) / 100, avg: Math.round(v * 100) / 100,
-                          nSales: 0, odd: null }, q: 1, comp: "max", pct: 100 });
+    side.rows.push(newRow({ manual: true, id: "slab-" + (++slabSeq), n: name,
+                            a: Math.round(v * 100) / 100, avg: Math.round(v * 100) / 100,
+                            nSales: 0, odd: null }, side));
     renderDeck();
     return true;
   }
@@ -2616,9 +2664,8 @@ var deckRows = [];
     var v = parseFloat(value);
     if (!(v > 0)) return false;
     v = Math.round(v * 100) / 100;
-    side.rows.push({ e: { manual: true, isCash: true, id: "cash-" + (++slabSeq),
-                          n: money(v) + " cash", a: v, avg: v, nSales: 0, odd: null },
-                     q: 1, comp: "max", pct: 100 });
+    side.rows.push(newRow({ manual: true, isCash: true, id: "cash-" + (++slabSeq),
+                            n: money(v) + " cash", a: v, avg: v, nSales: 0, odd: null }, side));
     renderDeck();
     return true;
   }
@@ -2631,17 +2678,28 @@ var deckRows = [];
     var subbed = 0, noSold = 0, neither = 0, cards = 0;
     var trs = body.querySelectorAll("tr");
     side.rows.forEach(function (r, i) {
-      var ask      = askOf(r.e);
-      var lineAsk  = ask       == null ? null : ask       * r.q;
-      var lineSold = r.e.avg   == null ? null : r.e.avg   * r.q;
-      if (r.e.a == null && r.e.avg != null) subbed += r.q;
-      if (r.e.a == null && r.e.avg == null) neither += r.q;
+      var ac = askComp(r), sc = soldComp(r);
+      var lineAsk  = ac == null ? null : ac * r.q;
+      var lineSold = sc == null ? null : sc * r.q;
+      if (askBorrowed(r)) subbed += r.q;
+      if (ac == null && sc == null) neither += r.q;
       cards += r.q;
       if (lineAsk  != null) askTotal  += lineAsk;
       if (lineSold == null) noSold += r.q; else soldTotal += lineSold;
       var tds = trs[i] ? trs[i].querySelectorAll("td") : [];
-      if (tds[5]) tds[5].innerHTML = lineAsk  == null ? '<span class="dim">-</span>' : money(lineAsk);
-      if (tds[6]) tds[6].innerHTML = lineSold == null ? '<span class="dim">-</span>' : money(lineSold);
+      /* The comp cells hold a select and, on Manual, an input - so only the
+         displayed number is rewritten, never the whole cell, or the dropdown
+         would close under the cursor on every keystroke elsewhere. */
+      [["ask", 5, ac], ["sold", 6, sc]].forEach(function (spec) {
+        var td = tds[spec[1]]; if (!td) return;
+        var box = td.querySelector(".deck__modeval");
+        if (box) {
+          if (box !== document.activeElement && spec[2] != null) box.value = spec[2];
+          return;
+        }
+        var out = td.querySelector(".deck__now");
+        if (out) out.innerHTML = spec[2] == null ? '-' : money(spec[2]);
+      });
       var cv = compValue(r);
       compTotal += (cv == null ? 0 : cv);
       if (tds[10]) tds[10].innerHTML = cv == null ? '<span class="dim">-</span>' : money(cv);
@@ -2658,16 +2716,14 @@ var deckRows = [];
        where it belonged - the larger of two grand totals is not a price
        anyone would ever quote. */
     side.totals = { ask: askTotal, sold: soldTotal, comp: compTotal, cards: cards };
-    /* The footer cannot use the same hiding rule the head and body use - its
-       label carries a colspan, so nth-child counts it wrong. It leaves the two
-       line-total cells out entirely in trade mode instead, which is what keeps
-       the comped total under its own column. */
+    /* Twelve cells, always: no column stands down any more, so a footer that
+       skipped two would slide every total one column left of the numbers it
+       totals. The label spans the art, qty, card and the two history columns. */
     foot.innerHTML = side.rows.length
       ? '<tr><td class="deck__lbl" colspan="5">' + cards +
         (cards === 1 ? " card" : " cards") + ' &middot; totals</td>' +
-        (tradeOn ? '' :
-          '<td class="deck__tot">' + money(askTotal) + '</td>' +
-          '<td class="deck__tot sold">' + money(soldTotal) + '</td>') +
+        '<td class="deck__tot">' + money(askTotal) + '</td>' +
+        '<td class="deck__tot sold">' + money(soldTotal) + '</td>' +
         '<td colspan="3"></td><td class="deck__tot comp">' + money(compTotal) + '</td><td></td></tr>'
       : "";
 
@@ -2684,37 +2740,86 @@ var deckRows = [];
     renderRead(side);
   }
 
-  /* A manual row is a slab: the board has no graded prices, so its value is
-     typed in and stands for ask, sold and max alike. It carries no product id,
-     so it has no art and no chart - just the number the trader agreed. */
+  /* ---- how a row gets its price -----------------------------------------
+     Three decisions, left to right, and each one narrows the last:
+
+       Asking history / Sales history   what the market did (up to five each)
+       Ask comp / Sold comp             which of those five to call the price
+       Comp choice                      which of those two prices to use
+
+     Nothing is averaged behind your back. The five numbers are on the page,
+     and every reduction of them to one number is a choice you can see and
+     change. Cash and slabs carry a single number, so all three steps agree. */
+  var MODES = ["latest", "avg", "avg3", "high", "low", "manual"];
+  var MODE_LABEL = { latest: "Latest", avg: "Average", avg3: "Average (3)",
+                     high: "Highest", low: "Lowest", manual: "Manual" };
+
+  /* Asks come back cheapest first and sales newest first, so "Latest" is the
+     head of each list either way: the live cheapest listing, and the most
+     recent sale. Both are the number that would be true if you acted now. */
+  /* Two bases, one at a time, never mixed inside a column. The card price is
+     what the rest of the board is on - shipping is roughly flat, so folding it
+     in pinned 738 of 929 asks between $1.40 and $1.75 and made every cheap
+     common look identical. The delivered price is what a buyer actually pays,
+     and is the number TCGplayer advertises as "from $X". Either way the
+     ORDERING is by delivered price, because a $2.99 card behind $19.99 shipping
+     is not a floor - it is one seller, above 82 real listings. */
+  var askBasis = "card";
+  function askList(r) {
+    var e = r.e;
+    if (askBasis === "delivered" && e.a5d && e.a5d.length) return e.a5d.slice(0, 5);
+    return (e.a5 || (e.a != null ? [e.a] : [])).slice(0, 5);
+  }
+  function soldList(r) { return (r.e.sales || (r.e.manual && r.e.avg != null ? [r.e.avg] : [])).slice(0, 5); }
+
+  function reduceList(vals, mode, manualVal) {
+    if (mode === "manual") {
+      /* Manual before anything is typed holds the head of the list rather than
+         dropping the row to nothing. */
+      return manualVal != null ? manualVal : (vals.length ? vals[0] : null);
+    }
+    if (!vals.length) return null;
+    if (mode === "latest") return vals[0];
+    if (mode === "high")   return Math.max.apply(null, vals);
+    if (mode === "low")    return Math.min.apply(null, vals);
+    var take = (mode === "avg3") ? vals.slice(0, 3) : vals;
+    var t = 0;
+    for (var i = 0; i < take.length; i++) t += take[i];
+    return Math.round((t / take.length) * 100) / 100;
+  }
+
+  /* A card with nothing listed borrows its sold comp rather than counting as
+     zero - an unlisted card is not a worthless one - and the cell says so. */
+  function askBorrowed(r) { return !askList(r).length && !!soldList(r).length; }
+  function askComp(r) {
+    if (askBorrowed(r)) return soldComp(r);
+    return reduceList(askList(r), r.askMode || "latest", r.askMp);
+  }
+  function soldComp(r) {
+    return reduceList(soldList(r), r.soldMode || "latest", r.soldMp);
+  }
+
+  /* A manual row is a slab or cash: the board has no graded prices, so its
+     value is typed in and stands for every basis alike. */
   function isManual(r) { return !!(r.e && r.e.manual); }
 
-  /* Each row picks the basis it is comped at and a percentage to shade it by,
-     because a trade is negotiated line by line - "your Yasuo at 90% of ask"
-     is a real sentence. Cash and slabs carry one number, so every basis is
-     the same for them. */
-  var COMPS = ["ask", "sold", "max", "manual"];
-  var COMP_LABEL = { ask: "Ask", sold: "Sold", max: "Max", manual: "Manual" };
-  /* The basis before the percentage is applied. "Manual" is the escape hatch:
-     a card can be worth something the board cannot see - a signed copy, a
-     centred print, a local shortage - and typing a price is more honest than
-     bending the percentage until the total looks right. */
+  var COMPS = ["ask", "sold", "max", "min", "manual"];
+  var COMP_LABEL = { ask: "Ask", sold: "Sold", max: "Max", min: "Min", manual: "Manual" };
+
   function autoBase(r) {
-    var e = r.e;
-    var ask = askOf(e), sold = (e.avg == null ? null : e.avg);
-    if (r.comp === "ask")  return ask;
-    if (r.comp === "sold") return sold;
-    if (ask == null && sold == null) return null;
-    if (ask == null)  return sold;
-    if (sold == null) return ask;
-    return Math.max(ask, sold);
+    var a = askComp(r), s = soldComp(r);
+    if (r.comp === "ask")  return a;
+    if (r.comp === "sold") return s;
+    if (a == null && s == null) return null;
+    if (a == null) return s;
+    if (s == null) return a;
+    return (r.comp === "min") ? Math.min(a, s) : Math.max(a, s);
   }
   function compBase(r) {
     if (r.comp === "manual") {
       if (r.mp != null) return r.mp;
-      /* Switched to Manual before anything was typed: hold whatever it was
-         worth a moment ago rather than dropping the row to zero. */
-      var was = { comp: "max", e: r.e };
+      var was = { comp: "max", e: r.e, askMode: r.askMode, soldMode: r.soldMode,
+                  askMp: r.askMp, soldMp: r.soldMp };
       return autoBase(was);
     }
     return autoBase(r);
@@ -2726,16 +2831,52 @@ var deckRows = [];
     return Math.round(b * r.q * (pct / 100) * 100) / 100;
   }
 
+  /* ---- the cells ---------------------------------------------------------- */
+
+  /* Every price on the page, not a control that reveals them. Five numbers in
+     a column are read at a glance; five numbers behind a click are read once
+     and then never again. */
+  function historyCell(r, kind) {
+    var vals = (kind === "ask" ? askList(r) : soldList(r));
+    if (!vals.length) {
+      return '<td class="n deck__hist">' +
+        (kind === "ask"
+          ? (askBorrowed(r) ? '<span class="dim">none listed</span>' : '<span class="dim">none listed</span>')
+          : '<span class="dim">no sales</span>') + '</td>';
+    }
+    return '<td class="n deck__hist">' + vals.map(function (v, i) {
+      return '<b class="' + (i === 0 ? "top" : "") + '">' + money(v) + '</b>';
+    }).join("") + '</td>';
+  }
+
+  function modeCell(r, i, kind) {
+    var v = (kind === "ask") ? askComp(r) : soldComp(r);
+    var mode = (kind === "ask" ? r.askMode : r.soldMode) || "latest";
+    var opts = MODES.map(function (m) {
+      return '<option value="' + m + '"' + (mode === m ? " selected" : "") + '>' +
+             MODE_LABEL[m] + '</option>';
+    }).join("");
+    var shown = (mode === "manual")
+      ? '<input class="deck__modeval" type="number" min="0" step="0.01" value="' +
+          (v == null ? "" : v) + '" data-kind="' + kind + '" data-i="' + i +
+          '" aria-label="' + (kind === "ask" ? "Ask" : "Sold") + ' comp price">'
+      : '<span class="deck__now">' + (v == null ? '-' : money(v)) + '</span>' +
+        (kind === "ask" && askBorrowed(r) ? '<span class="deck__sub">from sold</span>' : '');
+    return '<td class="n deck__compcell">' + shown +
+           '<select class="deck__mode" data-kind="' + kind + '" data-i="' + i +
+             '" aria-label="' + (kind === "ask" ? "Ask" : "Sold") + ' comp basis">' + opts + '</select></td>';
+  }
+
   function compCells(r, i) {
     var opts = COMPS.map(function (c) {
       return '<option value="' + c + '"' + (r.comp === c ? " selected" : "") + '>' +
              COMP_LABEL[c] + '</option>';
     }).join("");
     var v = compValue(r), b = compBase(r);
-    /* The price is shown for every basis, not only for Manual: it is the number
-       the row is actually being valued at, and seeing it is what makes the
-       choice above it meaningful. Typing in it switches the basis to Manual,
-       because a price you typed is not the ask any more. */
+    /* The price is shown whatever the choice, not only for Manual: it is the
+       number the row is actually valued at, and seeing it is what makes the
+       two choices to its left mean anything. Typing in it switches the choice
+       to Manual, because a price you typed is not the ask any more. */
     return '<td><select class="deck__comp" data-i="' + i + '" aria-label="Comp choice">' + opts + '</select></td>' +
            '<td><input class="deck__price" type="number" min="0" step="0.01" value="' +
              (b == null ? "" : b) + '" data-i="' + i + '" aria-label="Price used"></td>' +
@@ -2770,7 +2911,11 @@ var deckRows = [];
   function sideRead(side) {
     var rows = side.rows, out = [];
     if (!rows.length) return out;
-    var push = function (tone, text) { out.push({ tone: tone, text: text }); };
+    /* Three bullets, not seven. A read-out nobody finishes is a read-out that
+       does not exist, so each note carries a rank and only the top three
+       survive: what is not a card first (cash and slabs change what a deal
+       even is), then whether it can be sold, then how the value is shaped. */
+    var push = function (tone, rank, text) { out.push({ tone: tone, rank: rank, text: text }); };
     var val = function (r) { var v = compValue(r); return v == null ? 0 : v; };
     var total = rows.reduce(function (t, r) { return t + val(r); }, 0);
     var share = function (x) { return total > 0 ? x / total : 0; };
@@ -2781,15 +2926,14 @@ var deckRows = [];
     var cash = rows.filter(function (r) { return r.e.isCash; });
     if (cash.length) {
       var camt = cash.reduce(function (t, r) { return t + val(r); }, 0);
-      push("good", money(camt) + " of this side is cash - " + pctOf(share(camt)) +
-           " of its value, settling immediately with nothing to list, ship or wait on.");
+      push("good", 1, money(camt) + " cash, " + pctOf(share(camt)) +
+           " of this side - settles immediately, nothing to list or ship.");
     }
     var slabs = rows.filter(function (r) { return r.e.manual && !r.e.isCash; });
     if (slabs.length) {
       var samt = slabs.reduce(function (t, r) { return t + val(r); }, 0);
-      push("warn", slabs.length + (slabs.length === 1 ? " slab is" : " slabs are") +
-           " hand-entered - " + money(samt) + ", " + pctOf(share(samt)) +
-           " of this side, rests on your number rather than on anything the board pulled.");
+      push("warn", 2, money(samt) + " (" + pctOf(share(samt)) + ") is hand-entered slabs - " +
+           "your number, not the board's.");
     }
 
     // --- shape of the pile -------------------------------------------------
@@ -2797,13 +2941,11 @@ var deckRows = [];
       var sorted = rows.slice().sort(function (a, b) { return val(b) - val(a); });
       var topShare = share(val(sorted[0]));
       if (topShare >= 0.5) {
-        push("flat", pctOf(topShare) + " of this side is a single line, " + sorted[0].e.n +
-             " at " + money(val(sorted[0])) + ". Consolidated into one piece the trade is " +
-             "cleaner to settle, but it is one card that has to find one buyer.");
+        push("flat", 6, pctOf(topShare) + " rides on one card, " + sorted[0].e.n + " at " +
+             money(val(sorted[0])) + " - clean to settle, but one buyer to find.");
       } else if (rows.length >= 6 && topShare <= 0.25) {
-        push("flat", "Spread over " + rows.length + " lines with nothing above " +
-             pctOf(topShare) + " - no single card carries the trade, but realising " +
-             "this side in cash means that many separate sales.");
+        push("flat", 7, rows.length + " lines, nothing above " + pctOf(topShare) +
+             " - no single point of failure, but that many sales to cash out.");
       }
     }
 
@@ -2811,18 +2953,15 @@ var deckRows = [];
     var quiet = cards.filter(function (r) { return r.e.nSales === 0; });
     var thin  = cards.filter(function (r) { return r.e.nSales > 0 && r.e.nSales < 5; });
     if (quiet.length) {
-      push("warn", quiet.length + (quiet.length === 1 ? " card has" : " cards have") +
-           " no recorded sales at all - " + nameList(quiet) + ". An ask with no sale " +
-           "behind it is a price nobody has agreed to yet.");
+      push("warn", 3, quiet.length + " with no recorded sales (" + nameList(quiet) +
+           ") - an ask nobody has agreed to yet.");
     }
     if (thin.length && cards.length) {
-      push("warn", thin.length + " of " + cards.length + " cards rest on fewer than five " +
-           "recorded sales, so their averages are drawn from one to four prints. Thin " +
-           "trading cuts both ways: the number moves easily and it is slow to convert.");
+      push("warn", 5, thin.length + " of " + cards.length + " rest on fewer than five sales - " +
+           "thin, so the price moves easily and converts slowly.");
     }
     if (cards.length && !quiet.length && !thin.length) {
-      push("good", "Every card here carries a full five recent sales, so both columns " +
-           "rest on real trades rather than on one print.");
+      push("good", 9, "Every card carries a full five sales - both columns rest on real trades.");
     }
 
     // --- what the listings say ---------------------------------------------
@@ -2831,39 +2970,34 @@ var deckRows = [];
     });
     if (undercut.length) {
       var u = undercut[0], jump = Math.round((u.e.a5[1] / u.e.a5[0] - 1) * 100);
-      push("good", "On " + undercut.length + (undercut.length === 1 ? " card the" : " cards the") +
-           " cheapest ask is a lone undercut - the second copy of " + u.e.n + " is " + jump +
-           "% dearer. Comped at ask, this side is being valued off one seller in a hurry.");
+      push("good", 4, undercut.length + " with a lone undercut - the second " + u.e.n +
+           " is " + jump + "% dearer. At ask, this side is valued off one seller.");
     }
     var aspirational = cards.filter(function (r) {
       return r.e.a != null && r.e.avg != null && r.e.a >= r.e.avg * 1.25;
     });
     if (aspirational.length) {
-      push("warn", aspirational.length + (aspirational.length === 1 ? " card is" : " cards are") +
-           " listed well above what they last sold for (" + nameList(aspirational) +
-           "). Pricing those at ask flatters this side by whatever the gap turns out to be.");
+      push("warn", 8, aspirational.length + " listed well above their last sale (" +
+           nameList(aspirational) + ") - at ask, this side flatters itself.");
     }
     var keen = cards.filter(function (r) {
       return r.e.a != null && r.e.avg != null && r.e.a <= r.e.avg * 0.8;
     });
     if (keen.length) {
-      push("good", keen.length + (keen.length === 1 ? " card is" : " cards are") +
-           " listed below recent sales (" + nameList(keen) + ") - priced to move today " +
-           "rather than to sit.");
+      push("good", 10, keen.length + " listed below recent sales (" + nameList(keen) +
+           ") - priced to move.");
     }
 
     // --- direction of travel ------------------------------------------------
     var down = cards.filter(function (r) { return r.e.trend && r.e.trend.pct <= -20; });
     var up   = cards.filter(function (r) { return r.e.trend && r.e.trend.pct >= 20; });
     if (down.length) {
-      push("down", down.length + (down.length === 1 ? " card has" : " cards have") +
-           " a falling market line - " + down[0].e.n + " is " + Math.abs(down[0].e.trend.pct) +
-           "% below where it started. Time is against this side on those.");
+      push("down", 8, down.length + " falling - " + down[0].e.n + " is " +
+           Math.abs(down[0].e.trend.pct) + "% off. Time is against this side.");
     }
     if (up.length) {
-      push("up", up.length + (up.length === 1 ? " card has" : " cards have") +
-           " a rising market line - " + up[0].e.n + " is up " + up[0].e.trend.pct +
-           "%. Holding has paid so far, which is an argument for not trading them cheaply.");
+      push("up", 11, up.length + " rising - " + up[0].e.n + " up " + up[0].e.trend.pct +
+           "%. Holding has paid so far.");
     }
 
     // --- how new the supply is ----------------------------------------------
@@ -2873,10 +3007,9 @@ var deckRows = [];
     });
     if (fresh.length) {
       var w0 = weeksSince(fresh[0].e.first, SEED.pulled);
-      push("warn", fresh.length + (fresh.length === 1 ? " card first traded" : " cards first traded") +
-           " within the last " + Math.max(w0, 1) + " weeks (" + nameList(fresh) + "). Supply on a " +
-           "set this new is still landing - as a rule of thumb, not as anything this " +
-           "board has measured, prices on fresh product tend to ease as it does.");
+      push("warn", 9, fresh.length + " first traded " + Math.max(w0, 1) + " weeks ago (" +
+           nameList(fresh) + ") - supply still landing, and new product usually eases " +
+           "as it does (rule of thumb, not measured here).");
     }
 
     // --- what kind of value it is -------------------------------------------
@@ -2886,16 +3019,15 @@ var deckRows = [];
       var play = cards.filter(function (r) { return r.e.section === "Playable"; })
                       .reduce(function (t, r) { return t + val(r); }, 0);
       if (slow > 0 && play > 0) {
-        push("flat", pctOf(share(slow)) + " of this side is signatures and overnumbers and " +
-             pctOf(share(play)) + " is playables - chase cards move slowly at high prices, " +
-             "playables move quickly at low ones, and they are not the same kind of money.");
+        push("flat", 12, pctOf(share(slow)) + " chase cards, " + pctOf(share(play)) +
+             " playables - slow money and fast money, not the same thing.");
       } else if (play > 0 && copies >= 4 && play / Math.max(copies, 1) < 5) {
-        push("flat", "All playables, averaging " + money(play / Math.max(copies, 1)) +
-             " a copy across " + copies + " copies. Bulk like this is easy to price and " +
-             "hard to sell as anything other than a lot.");
+        push("flat", 12, "All playables, " + money(play / Math.max(copies, 1)) + " a copy " +
+             "across " + copies + " - bulk, hard to sell except as a lot.");
       }
     }
-    return out.slice(0, 7);
+    out.sort(function (a, b) { return a.rank - b.rank; });
+    return out.slice(0, 3);
   }
 
   function renderRead(side) {
@@ -2930,9 +3062,8 @@ var deckRows = [];
             '" data-i="' + i + '" aria-label="Quantity"></td>' +
           '<td class="card ind">' + esc(e.n) + '<span class="rar">' +
             (e.isCash ? "cash" : "slab &middot; entered by hand") + '</span></td>' +
-          '<td class="n">' + money(e.a) + '<span class="deck__sub">manual</span></td>' +
-          '<td class="n"><span class="dim">-</span></td>' +
-          '<td class="n big"></td><td class="n big"></td>' +
+          historyCell(r, "ask") + historyCell(r, "sold") +
+          modeCell(r, i, "ask") + modeCell(r, i, "sold") +
           compCells(r, i) +
           '<td><button class="deck__x" data-del="' + i + '" aria-label="Remove">&times;</button></td>' +
         '</tr>';
@@ -2943,19 +3074,8 @@ var deckRows = [];
           '" data-i="' + i + '" aria-label="Quantity"></td>' +
         '<td class="card ind">' + e.n +
           '<span class="rar">' + e.section + ' &middot; ' + e.set + '</span></td>' +
-        '<td class="n">' + askCell(e) + detailList(r, i, "ask") + '</td>' +
-        /* The sale count only earns its width when the average rests on fewer
-           than the full five - "of 5" on every row is what the header says. */
-        '<td class="n">' + (e.avg == null
-            ? '<span class="dim">no sales</span>'
-            : now(e.avg) + (e.nSales < 5
-                ? '<span class="dim"> of ' + e.nSales + '</span>' : '') +
-              (e.odd ? '<span class="deck__odd" title="One sale of ' + money(e.odd.hi) +
-                       ' sits about ' + e.odd.times + ' times the rest, and is included ' +
-                       'in this average">! one sale ' + e.odd.times + '× the rest</span>' : ''))
-          + detailList(r, i, "sold") + '</td>' +
-        '<td class="n big"></td>' +
-        '<td class="n big"></td>' +
+        historyCell(r, "ask") + historyCell(r, "sold") +
+        modeCell(r, i, "ask") + modeCell(r, i, "sold") +
         compCells(r, i) +
         '<td><button class="deck__x" data-del="' + i + '" aria-label="Remove">&times;</button></td>' +
       '</tr>';
@@ -3039,17 +3159,20 @@ var deckRows = [];
     renderDeck();
   });
 
-  /* ---------------- saved lists ----------------
-     A saved list holds card ids and quantities and nothing else. Prices move
-     every time the pull runs, so storing them would mean loading a list and
-     seeing numbers that no longer match the rest of the board; re-resolving the
-     ids against the live snapshot is the whole point.
+  /* ---------------- saved trades ----------------
+     A saved trade is a RECORD, and records keep their numbers. A deck list is
+     the opposite - it holds ids and quantities so that loading it re-prices
+     against today's board - but a trade that re-priced itself would be useless
+     and quietly dishonest: what a card is worth next month does not change what
+     was agreed today. So every price, basis and percentage is frozen into the
+     entry, along with the date the board's prices were pulled, which is the
+     only thing that says how good those numbers were at the time.
 
      Storage is this browser's localStorage. The page has no shared store
-     available to it, so a list saved here is visible to this browser and not to
-     anyone else opening the board. */
-  var DECK_STORE = "riftbound.decks.v1";
-  var deckMemory = [];   /* fallback when a browser refuses storage entirely */
+     available to it, so a trade saved here is visible to this browser and not
+     to anyone else opening the board. */
+  var TRADE_STORE = "riftbound.trades.v1";
+  var tradeMemory = [];   /* fallback when a browser refuses storage entirely */
 
   function esc(s) {
     return String(s == null ? "" : s).replace(/[&<>"]/g, function (c) {
@@ -3057,121 +3180,199 @@ var deckRows = [];
     });
   }
 
-  function readDecks() {
+  function readTrades() {
     try {
-      var raw = window.localStorage.getItem(DECK_STORE);
-      if (raw == null) return deckMemory.slice();
+      var raw = window.localStorage.getItem(TRADE_STORE);
+      if (raw == null) return tradeMemory.slice();
       var v = JSON.parse(raw);
       return Array.isArray(v) ? v : [];
-    } catch (e) { return deckMemory.slice(); }
+    } catch (e) { return tradeMemory.slice(); }
   }
 
-  function writeDecks(list) {
-    deckMemory = list.slice();
-    try { window.localStorage.setItem(DECK_STORE, JSON.stringify(list)); return true; }
+  function writeTrades(list) {
+    tradeMemory = list.slice();
+    try { window.localStorage.setItem(TRADE_STORE, JSON.stringify(list)); return true; }
     catch (e) { return false; }
   }
 
-  function renderSaved(msg) {
-    var host = document.getElementById("deckSavedList");
-    var noteEl = document.getElementById("deckSavedNote");
-    if (!host) return;
-    var list = readDecks();
-    if (!list.length) {
-      host.innerHTML = '<div class="deck__saved-empty">No saved lists yet. ' +
-                       'Build one, name it, and save.</div>';
-    } else {
-      host.innerHTML = list.map(function (d, i) {
-        var copies = (d.cards || []).reduce(function (t, c) { return t + (+c.q || 0); }, 0);
-        return '<div class="deck__deck" title="Saved ' + esc(d.saved || "") + '">' +
-          '<b>' + esc(d.name) + '</b>' +
-          '<span>' + copies + '</span>' +
-          '<span class="deck__deck-btns">' +
-            '<button data-load="' + i + '">Load</button>' +
-            '<button class="del" data-drop="' + i + '">Delete</button>' +
-          '</span></div>';
-      }).join("");
-    }
-    if (noteEl) noteEl.textContent = msg || "";
+  /* Everything needed to read the deal back without the board: what it was,
+     what each side was comped at and how that price was arrived at. */
+  function snapshotSide(side, label) {
+    return {
+      label: label,
+      rows: side.rows.map(function (r) {
+        return { n: r.e.n, id: r.e.id,
+                 kind: r.e.isCash ? "Cash" : (r.e.manual ? "Slab" : (r.e.section || "")),
+                 set: r.e.manual ? "" : (r.e.set || ""),
+                 q: r.q,
+                 askMode: r.askMode || "latest", soldMode: r.soldMode || "latest",
+                 ask: askComp(r), sold: soldComp(r),
+                 comp: r.comp, price: compBase(r),
+                 pct: (r.pct == null ? 100 : r.pct), value: compValue(r) };
+      }),
+      total: Math.round(((side.totals || {}).comp || 0) * 100) / 100
+    };
   }
 
-  function saveCurrent() {
+  function saveTrade() {
     var nameBox = document.getElementById("deckName");
-    var name = ((nameBox && nameBox.value) || "").trim();
-    if (!deckRows.length) { renderSaved("Nothing to save - the list is empty."); return; }
-    if (!name) {
-      renderSaved("Give the list a name first.");
-      if (nameBox) nameBox.focus();
+    var who = ((nameBox && nameBox.value) || "").trim();
+    if (!sideA.rows.length && !sideB.rows.length) {
+      renderSaved("Nothing to save - both sides are empty.");
       return;
     }
-    var stamp = "";
-    try { stamp = new Date().toISOString().slice(0, 10); } catch (e) { stamp = ""; }
-    var entry = { name: name, saved: stamp,
-                  cards: deckRows.map(function (r) { return { id: r.e.id, q: r.q }; }) };
+    var at = "", when = "";
+    try {
+      var d = new Date();
+      at = d.toISOString();
+      when = d.toLocaleString(undefined, { year: "numeric", month: "short", day: "numeric",
+                                           hour: "numeric", minute: "2-digit" });
+    } catch (e) { at = ""; when = ""; }
 
-    var list = readDecks(), at = -1;
-    for (var i = 0; i < list.length; i++) {
-      if (String(list[i].name).toLowerCase() === name.toLowerCase()) { at = i; break; }
-    }
-    if (at > -1) list[at] = entry; else list.unshift(entry);
+    var yours = snapshotSide(sideA, "Yours");
+    var theirs = snapshotSide(sideB, "Theirs");
+    var entry = { at: at, when: when, who: who, basis: askBasis,
+                  pulled: SEED.pulledLabel || SEED.pulled || "",
+                  yours: yours, theirs: theirs,
+                  diff: Math.round((yours.total - theirs.total) * 100) / 100 };
 
-    var stored = writeDecks(list);
+    var list = readTrades();
+    list.unshift(entry);
+    var stored = writeTrades(list);
     if (nameBox) nameBox.value = "";
     renderSaved(!stored
       ? "Kept for this visit only - this browser is blocking storage."
-      : '"' + name + '" ' + (at > -1 ? "updated." : "saved."));
+      : "Saved " + (when || "just now") + (who ? " with " + who : "") + ".");
+    renderHistory();
   }
 
-  function loadDeck(i) {
-    var entry = readDecks()[i];
-    if (!entry) return;
-    if (!DECK_INDEX) DECK_INDEX = buildDeckIndex();
-    var byId = {};
-    DECK_INDEX.forEach(function (e) { byId[e.id] = e; });
-
-    var rows = [], missing = 0;
-    (entry.cards || []).forEach(function (c) {
-      var e = byId[c.id];
-      if (!e) { missing++; return; }      /* a card the board no longer carries */
-      var q = parseInt(c.q, 10);
-      rows.push({ e: e, q: (q > 0 && q < 1000) ? q : 1 });
-    });
-
-    /* Assign through the side as well: sideA.rows holds a reference to the
-       same array, and rebinding only the global would leave the side pointing
-       at the old one - the list would look loaded and price the previous deck. */
-    deckRows = rows;
-    sideA.rows = rows;
-    renderDeck();
-    renderSaved(missing
-      ? '"' + entry.name + '" loaded - ' + missing + (missing === 1 ? " card is" : " cards are") +
-        ' no longer on the board and were skipped.'
-      : '"' + entry.name + '" loaded and re-priced.');
+  /* The panel beside the calculator shows only the most recent few - the full
+     record lives on its own tab, and a sidebar that grows without limit stops
+     being a sidebar. */
+  function renderSaved(msg) {
+    var host = document.getElementById("deckSavedList");
+    var noteEl = document.getElementById("deckSavedNote");
+    if (noteEl) noteEl.textContent = msg || "";
+    if (!host) return;
+    var list = readTrades();
+    if (!list.length) {
+      host.innerHTML = '<div class="deck__saved-empty">No trades saved yet. Build both ' +
+                       'sides, then save the deal.</div>';
+      return;
+    }
+    host.innerHTML = list.slice(0, 4).map(function (t) {
+      var d = t.diff || 0;
+      var cls = Math.abs(d) < 0.005 ? "even" : (d < 0 ? "in" : "out");
+      var word = Math.abs(d) < 0.005 ? "even" : (d < 0 ? "you received" : "you gave");
+      return '<div class="deck__deck">' +
+        '<b>' + esc(t.who || "Untitled trade") + '</b>' +
+        '<span class="deck__deck-when">' + esc(t.when || "") + '</span>' +
+        '<span class="trade__d ' + cls + '">' + word + ' ' + money(Math.abs(d)) + '</span>' +
+        '</div>';
+    }).join("") +
+      (list.length > 4 ? '<div class="deck__saved-empty">' + (list.length - 4) +
+                         ' more under Trade History.</div>' : "");
   }
 
-  function dropDeck(i) {
-    var list = readDecks(), gone = list[i];
-    if (!gone) return;
+  /* ---------------- the history tab ---------------- */
+  function tradeRowsHtml(sideRec) {
+    if (!sideRec || !sideRec.rows.length) {
+      return '<div class="hist__empty">nothing on this side</div>';
+    }
+    return '<table class="hist__t"><thead><tr>' +
+      '<th>Qty</th><th>Card</th><th>Ask</th><th>Sold</th><th>Comp</th><th>Price</th><th>%</th><th>Value</th>' +
+      '</tr></thead><tbody>' +
+      sideRec.rows.map(function (r) {
+        var sub = [r.kind, r.set].filter(Boolean).join(" \u00b7 ");
+        return '<tr>' +
+          '<td>' + r.q + '</td>' +
+          '<td class="card ind">' + esc(r.n) +
+            (sub ? '<span class="rar">' + esc(sub) + '</span>' : '') + '</td>' +
+          '<td class="n">' + (r.ask == null ? '<span class="dim">-</span>' : money(r.ask)) +
+            '<span class="hist__mode">' + esc(MODE_LABEL[r.askMode] || r.askMode) + '</span></td>' +
+          '<td class="n">' + (r.sold == null ? '<span class="dim">-</span>' : money(r.sold)) +
+            '<span class="hist__mode">' + esc(MODE_LABEL[r.soldMode] || r.soldMode) + '</span></td>' +
+          '<td>' + esc(COMP_LABEL[r.comp] || r.comp) + '</td>' +
+          '<td class="n">' + (r.price == null ? '<span class="dim">-</span>' : money(r.price)) + '</td>' +
+          '<td>' + r.pct + '</td>' +
+          '<td class="n big">' + (r.value == null ? '<span class="dim">-</span>' : money(r.value)) + '</td>' +
+        '</tr>';
+      }).join("") +
+      '</tbody><tfoot><tr><td class="deck__lbl" colspan="7">total</td>' +
+      '<td class="deck__tot comp">' + money(sideRec.total || 0) + '</td></tr></tfoot></table>';
+  }
+
+  function renderHistory() {
+    var host = document.getElementById("histList");
+    var count = document.getElementById("histCount");
+    if (!host) return;
+    var list = readTrades();
+    if (count) {
+      count.textContent = list.length
+        ? list.length + (list.length === 1 ? " trade saved" : " trades saved")
+        : "";
+    }
+    if (!list.length) {
+      host.innerHTML = '<div class="panel"><div class="emptynote" style="padding:22px">' +
+        'No trades saved yet. Price a deal in the Trade Calculator and save it.</div></div>';
+      return;
+    }
+    host.innerHTML = list.map(function (t, i) {
+      var d = t.diff || 0;
+      var cls = Math.abs(d) < 0.005 ? "even" : (d < 0 ? "in" : "out");
+      var word = Math.abs(d) < 0.005 ? "even trade"
+               : (d < 0 ? "you received " + money(-d) : "you gave " + money(d));
+      return '<div class="hist__card">' +
+        '<div class="hist__head">' +
+          '<b>' + esc(t.who || "Untitled trade") + '</b>' +
+          '<span class="hist__when">' + esc(t.when || "") + '</span>' +
+          '<span class="trade__d ' + cls + '">' + word + '</span>' +
+          '<button class="deck__x" data-drop="' + i + '" aria-label="Delete this trade">&times;</button>' +
+        '</div>' +
+        '<div class="hist__sides">' +
+          '<div><div class="side__head">Yours &middot; ' + money((t.yours || {}).total || 0) + '</div>' +
+            tradeRowsHtml(t.yours) + '</div>' +
+          '<div><div class="side__head">Theirs &middot; ' + money((t.theirs || {}).total || 0) + '</div>' +
+            tradeRowsHtml(t.theirs) + '</div>' +
+        '</div>' +
+        '<div class="hist__foot">Asking shown as ' +
+          (t.basis === "delivered" ? "delivered price" : "card price, no shipping") +
+          (t.pulled ? ' &middot; board prices pulled ' + esc(t.pulled) : '') + '</div>' +
+      '</div>';
+    }).join("");
+  }
+
+  function dropTrade(i) {
+    var list = readTrades();
+    if (!list[i]) return;
     list.splice(i, 1);
-    writeDecks(list);
-    renderSaved('"' + gone.name + '" deleted.');
+    writeTrades(list);
+    renderHistory();
+    renderSaved("Trade deleted.");
   }
+
 
   var saveBtn = document.getElementById("deckSave");
-  if (saveBtn) saveBtn.addEventListener("click", saveCurrent);
+  if (saveBtn) saveBtn.addEventListener("click", saveTrade);
 
   var nameBox = document.getElementById("deckName");
   if (nameBox) nameBox.addEventListener("keydown", function (ev) {
-    if (ev.key === "Enter") { ev.preventDefault(); saveCurrent(); }
+    if (ev.key === "Enter") { ev.preventDefault(); saveTrade(); }
   });
 
-  var savedHost = document.getElementById("deckSavedList");
-  if (savedHost) savedHost.addEventListener("click", function (ev) {
+  var histHost = document.getElementById("histList");
+  if (histHost) histHost.addEventListener("click", function (ev) {
     var t = ev.target;
     if (!t || !t.getAttribute) return;
-    var l = t.getAttribute("data-load"), d = t.getAttribute("data-drop");
-    if (l !== null) loadDeck(+l);
-    else if (d !== null) dropDeck(+d);
+    var d = t.getAttribute("data-drop");
+    if (d !== null) dropTrade(+d);
+  });
+
+  var histClear = document.getElementById("histClear");
+  if (histClear) histClear.addEventListener("click", function () {
+    writeTrades([]);
+    renderHistory();
+    renderSaved("History cleared.");
   });
 
   /* Side B reuses the same suggestion machinery; `matches` and `active` are
@@ -3226,6 +3427,19 @@ var deckRows = [];
     side.body.addEventListener("input", function (ev) {
       var t = ev.target;
       var cn = String(t && t.className || "");
+      /* A price typed into an Ask comp or Sold comp cell only overrides that
+         one comp, and only while its basis is Manual - it is not the row's
+         final price, which is the column three to the right. */
+      if (cn.indexOf("deck__modeval") > -1) {
+        var mi = +t.getAttribute("data-i"), mk = t.getAttribute("data-kind");
+        var mv = parseFloat(t.value);
+        if (!side.rows[mi]) return;
+        var val = (t.value === "" || !(mv >= 0)) ? null : Math.round(mv * 100) / 100;
+        if (mk === "ask") side.rows[mi].askMp = val; else side.rows[mi].soldMp = val;
+        refreshTotals(side);
+        renderTradeSummary();
+        return;
+      }
       if (cn.indexOf("deck__price") > -1) {
         var xi = +t.getAttribute("data-i"), xv = parseFloat(t.value);
         if (!side.rows[xi]) return;
@@ -3266,7 +3480,22 @@ var deckRows = [];
     });
     side.body.addEventListener("change", function (ev) {
       var t = ev.target;
-      if (!t || !t.className || String(t.className).indexOf("deck__comp") < 0) return;
+      var cn = String(t && t.className || "");
+      /* deck__modeval contains "deck__mode" as a substring, and a number input
+         fires change too - so match the element, not just the name. */
+      if (t.tagName === "SELECT" && cn.indexOf("deck__mode") > -1) {
+        var mi = +t.getAttribute("data-i"), mk = t.getAttribute("data-kind");
+        if (!side.rows[mi] || MODES.indexOf(t.value) < 0) return;
+        if (mk === "ask") side.rows[mi].askMode = t.value;
+        else             side.rows[mi].soldMode = t.value;
+        /* Switching into or out of Manual swaps a number for an input, which
+           is a change of shape rather than of value - that cell has to be
+           re-rendered rather than rewritten. */
+        renderSide(side);
+        renderTradeSummary();
+        return;
+      }
+      if (cn.indexOf("deck__comp") < 0) return;
       var i = +t.getAttribute("data-i");
       if (!side.rows[i] || COMPS.indexOf(t.value) < 0) return;
       side.rows[i].comp = t.value;
@@ -3341,6 +3570,32 @@ var deckRows = [];
     renderDeck();
   });
 
+  (function setupBasis() {
+    var chips = [].slice.call(document.querySelectorAll(".chip--basis"));
+    var note = el("basisnote");
+    if (!chips.length) return;
+    var paint = function () {
+      chips.forEach(function (c) { c.classList.toggle("is-on", c.dataset.basis === askBasis); });
+      if (note) note.textContent = askBasis === "delivered"
+        ? "card price plus that seller's shipping - what you would actually pay"
+        : "the card alone, no shipping - the basis the rest of the board uses";
+      var heads = [].slice.call(document.querySelectorAll("#p-deck thead th"));
+      heads.forEach(function (h) {
+        var t = h.textContent.trim();
+        if (t.indexOf("Asking history") === 0) h.textContent = "Asking history";
+        if (t.indexOf("Ask comp") === 0) h.textContent = "Ask comp";
+      });
+    };
+    chips.forEach(function (c) {
+      c.addEventListener("click", function () {
+        askBasis = c.dataset.basis === "delivered" ? "delivered" : "card";
+        paint();
+        renderDeck();
+      });
+    });
+    paint();
+  })();
+
   var tradeClearBtn = el("tradeClear");
   if (tradeClearBtn) tradeClearBtn.addEventListener("click", function () {
     sideB.rows = []; sideB.cash = 0;
@@ -3351,6 +3606,7 @@ var deckRows = [];
   window.__renderDeck = renderDeck;
   renderDeck();
   renderSaved();
+  renderHistory();
 })();
 
 drawAll();
