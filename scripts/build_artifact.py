@@ -28,7 +28,17 @@ import base64, glob, io, json, os, re, sys
 
 HERE = WORK
 REPO = ROOT
-SRC   = os.path.join(REPO, "board.standalone.html")
+# board.standalone.html is build output and gitignored, so a fresh clone does
+# not have it. docs/index.html is the same bytes, committed because GitHub Pages
+# serves it - which makes it the one copy of the built board a clone can rely
+# on. Prefer the local build when it exists (it is the newer of the two mid-run)
+# and fall back to the committed one, which is what a cloud publish reads.
+SRC = os.path.join(REPO, "board.standalone.html")
+if not os.path.exists(SRC):
+    SRC = os.path.join(REPO, "docs", "index.html")
+if not os.path.exists(SRC):
+    sys.exit("no built board found - expected board.standalone.html or "
+             "docs/index.html. Run `npm run all` first.")
 # Committed to the repo so a refresh never depends on Google Fonts being
 # reachable; falls back to a locally generated copy if one exists.
 FONTS = os.path.join(REPO, "assets", "fonts_inline.css")
