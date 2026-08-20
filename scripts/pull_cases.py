@@ -20,7 +20,9 @@ from card_lib import (_req, L_HISTORY, listings, foreign_or_graded,
 
 CASES = {"OGN": ("Origins", 635369), "SPF": ("Spiritforged", 661937),
          "UNL": ("Unleashed", 678152), "VDT": ("Vendetta", 693382)}
-snap = json.load(open("/Users/timothypark/Desktop/riftbound/snapshot.json"))
+# ROOT, not a laptop path: this is the last hardcoded one and it would have
+# broken silently the moment the repo moved off the Desktop.
+snap = json.load(open(_os.path.join(ROOT, "snapshot.json")))
 by = {s["set"]: s for s in snap["sets"]}
 
 lines, meta = [], {}

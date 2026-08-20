@@ -3,6 +3,12 @@
 <!--
   Daily Riftbound price refresh at 05:00 local time.
 
+  The repo must NOT live in ~/Desktop, ~/Documents or ~/Downloads. Those are
+  TCC-protected, and a launchd agent has no permission for them - every run
+  fails with "Operation not permitted" before the script's first line, exit
+  126, and leaves nothing in logs/ to explain itself. Verified the hard way:
+  three silent 5AM failures in a row. ~/riftbound is not protected.
+
   Install:
     cp scripts/com.riftbound.refresh.plist ~/Library/LaunchAgents/
     launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.riftbound.refresh.plist
@@ -23,11 +29,11 @@
   <key>ProgramArguments</key>
   <array>
     <string>/bin/bash</string>
-    <string>/Users/timothypark/Desktop/riftbound/scripts/daily.sh</string>
+    <string>/Users/timothypark/riftbound/scripts/daily.sh</string>
   </array>
 
   <key>WorkingDirectory</key>
-  <string>/Users/timothypark/Desktop/riftbound</string>
+  <string>/Users/timothypark/riftbound</string>
 
   <key>StartCalendarInterval</key>
   <dict>
@@ -38,9 +44,9 @@
   <!-- The script does its own logging; these catch anything that escapes it,
        such as an interpreter failing before the script can redirect. -->
   <key>StandardOutPath</key>
-  <string>/Users/timothypark/Desktop/riftbound/logs/launchd.out.log</string>
+  <string>/Users/timothypark/riftbound/logs/launchd.out.log</string>
   <key>StandardErrorPath</key>
-  <string>/Users/timothypark/Desktop/riftbound/logs/launchd.err.log</string>
+  <string>/Users/timothypark/riftbound/logs/launchd.err.log</string>
 
   <!-- Never on load: a ~2 hour pull should not start just because the machine
        rebooted or the agent was reinstalled. -->
