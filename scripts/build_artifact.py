@@ -17,9 +17,14 @@ reads it and writes a separate file, applying only what the artifact host needs:
      remote images), downscaled to 176px - 2x the 88px the board displays
 
 Re-run after any rebuild:  venv/bin/python build_artifact.py
+Re-encode the art:         venv/bin/python build_artifact.py --rebuild-images
+
+Only the re-encode needs Pillow and the jpg cache. The ordinary build reads
+assets/cardimg.json, which is committed, so a fresh clone with nothing but the
+standard library can produce a publishable page - which is what lets a
+scheduled cloud session republish the artifact.
 """
 import base64, glob, io, json, os, re, sys
-from PIL import Image
 
 HERE = WORK
 REPO = ROOT
@@ -31,6 +36,12 @@ if not os.path.exists(FONTS):
     FONTS = os.path.join(HERE, "fonts_inline.css")
 CACHE = os.path.join(HERE, "imgcache")
 OUT   = os.path.join(HERE, "riftbound-board.html")
+# The encoded thumbnails, committed. Card art does not change, so encoding it
+# is a rare job and splicing it is a daily one - keeping the result in the repo
+# is what lets a fresh clone build a publishable page with the standard library
+# alone, no Pillow and no 20 MB of source jpgs. Re-encode with --rebuild-images
+# after new cards land.
+BUNDLE = os.path.join(REPO, "assets", "cardimg.json")
 
 # The publish path times out somewhere above ~6.5 MB. 1049 thumbnails at
 # 176px/q60 made a 10 MB page and 144px/q52 a 7 MB one, both rejected;
@@ -39,18 +50,36 @@ OUT   = os.path.join(HERE, "riftbound-board.html")
 # past the size where publishing starts timing out.
 THUMB_W, WEBP_Q = 94, 46
 
-# ---------- 1. encode the thumbnails ----------
-imgs, raw_total = {}, 0
-for path in sorted(glob.glob(os.path.join(CACHE, "*.jpg"))):
-    cid = os.path.splitext(os.path.basename(path))[0]
-    im = Image.open(path).convert("RGB")
-    im.thumbnail((THUMB_W, THUMB_W * 10), Image.LANCZOS)
-    buf = io.BytesIO()
-    im.save(buf, "WEBP", quality=WEBP_Q, method=6)
-    raw_total += buf.tell()
-    imgs[cid] = base64.b64encode(buf.getvalue()).decode("ascii")
-print(f"encoded {len(imgs)} thumbnails: {raw_total/1024/1024:.2f} MB raw"
-      f" -> {sum(len(v) for v in imgs.values())/1024/1024:.2f} MB base64")
+# ---------- 1. the thumbnails ----------
+def encode_from_cache():
+    from PIL import Image           # only needed when re-encoding, not to build
+    out, raw_total = {}, 0
+    for path in sorted(glob.glob(os.path.join(CACHE, "*.jpg"))):
+        cid = os.path.splitext(os.path.basename(path))[0]
+        im = Image.open(path).convert("RGB")
+        im.thumbnail((THUMB_W, THUMB_W * 10), Image.LANCZOS)
+        buf = io.BytesIO()
+        im.save(buf, "WEBP", quality=WEBP_Q, method=6)
+        raw_total += buf.tell()
+        out[cid] = base64.b64encode(buf.getvalue()).decode("ascii")
+    print(f"encoded {len(out)} thumbnails: {raw_total/1024/1024:.2f} MB raw"
+          f" -> {sum(len(v) for v in out.values())/1024/1024:.2f} MB base64")
+    return out
+
+rebuild = "--rebuild-images" in sys.argv
+if rebuild or not os.path.exists(BUNDLE):
+    imgs = encode_from_cache()
+    if not imgs:
+        sys.exit("no thumbnails in " + CACHE + " and no bundle at " + BUNDLE +
+                 " - nothing to inline, and a board with no card art is not "
+                 "worth publishing")
+    os.makedirs(os.path.dirname(BUNDLE), exist_ok=True)
+    json.dump(imgs, open(BUNDLE, "w"), separators=(",", ":"))
+    print(f"wrote {BUNDLE} ({os.path.getsize(BUNDLE)/1024/1024:.2f} MB)")
+else:
+    imgs = json.load(open(BUNDLE))
+    print(f"loaded {len(imgs)} thumbnails from {os.path.basename(BUNDLE)}"
+          f" ({os.path.getsize(BUNDLE)/1024/1024:.2f} MB)")
 
 # ---------- 2. slice the generated page ----------
 # Located by content, not by line number: the board grows every time a set
