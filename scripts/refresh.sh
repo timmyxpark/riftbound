@@ -69,7 +69,20 @@ say "promos and extras"
 # Added Aug 18 2026. This section was pulled once when it was built and then
 # left behind by every refresh - it is in the Trade Calculator now, so a stale
 # price here is a wrong answer rather than an old one.
-$PY scripts/pull_extras.py
+#
+# Retried like the catalog sets are, and for the same reason: on Aug 20 the
+# network dropped near the end, 23 of 401 cards came back as DNS failures, and
+# merge_extras refused the short pull - correctly, but that meant a three-hour
+# run produced nothing. The pull resumes by product id, so a retry costs only
+# the cards that actually failed, and nothing at all when none did.
+want_extras=$($PY -c 'import json,os;print(len(json.load(open(os.path.join(os.environ["RIFTBOUND_WORK"],"extras_list.json")))))' 2>/dev/null || echo 0)
+for pass in 1 2 3; do
+  $PY scripts/pull_extras.py
+  have=$(wc -l < "$WORK/extras_pull.txt" 2>/dev/null || echo 0)
+  want_extras=$($PY -c 'import json,os;print(len(json.load(open(os.path.join(os.environ["RIFTBOUND_WORK"],"extras_list.json")))))' 2>/dev/null || echo 0)
+  [ "$want_extras" -gt 0 ] && [ "$have" -ge "$want_extras" ] && break
+  echo "  extras $have/$want_extras - retrying"
+done
 say "sealed cases"
 $PY scripts/pull_cases.py
 say "boxes and other sealed"

@@ -27,7 +27,15 @@ echo "================ $(date '+%Y-%m-%d %H:%M:%S %Z') ================"
 
 # ---- 1. the data -----------------------------------------------------------
 echo "--- refresh ---"
-if ! RIFTBOUND_PYTHON="$VENV_PY" bash scripts/refresh.sh; then
+# caffeinate -i holds off idle sleep for exactly as long as the pull runs. A
+# full refresh needs about three hours of continuous network, and this Mac is
+# set to sleep after a minute idle - on Aug 20 it slept partway through, DNS
+# went with it, and 23 cards came back as "nodename nor servname provided".
+# This does NOT defeat closing the lid, and it cannot wake a sleeping machine:
+# see the note at the foot of this file.
+CAFF=""
+command -v caffeinate >/dev/null 2>&1 && CAFF="caffeinate -i"
+if ! RIFTBOUND_PYTHON="$VENV_PY" $CAFF bash scripts/refresh.sh; then
   echo "REFRESH FAILED - board left untouched (every merge validates before writing)"
   exit 1
 fi
@@ -85,3 +93,21 @@ echo "  the Claude artifact is separate: ask Claude \"publish the board\" to upd
 echo "  since the Artifact tool is not available to headless sessions."
 
 echo "--- done $(date '+%H:%M:%S') ---"
+
+# ---- what this job cannot do -----------------------------------------------
+# It needs the Mac awake. caffeinate keeps it awake once the job has STARTED,
+# but launchd cannot start a job on a machine that is asleep or off - it defers
+# to the next wake, which may be hours late or, if the lid stays shut all day,
+# not at all. To have the machine wake itself for the run:
+#
+#   sudo pmset repeat wake MTWRFSU 04:55:00
+#
+# (one repeating wake is all pmset allows, so it covers the 05:00 run only;
+# the 17:00 run needs the Mac already awake.) A shut-down Mac cannot be woken
+# by pmset at all.
+#
+# It also does not touch the Claude artifact: that tool is unavailable to
+# headless sessions. A scheduled cloud routine republishes it from what this
+# job pushes, and runs whether or not this machine is on - which means it can
+# republish yesterday's prices perfectly happily. It reports the snapshot date
+# every run so that is visible rather than silent.

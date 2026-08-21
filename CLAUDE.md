@@ -83,6 +83,34 @@ recover; that is a cooldown, not something to tune around.
 writing - counts, packed-series lengths, ids against `catalog_ids.json` - and
 refuse to write anything if a check fails.
 
+## The automation, and the trap that silenced it for three days
+
+`scripts/daily.sh` runs from launchd at **05:00 and 17:00 local time** and does
+the whole cycle: pull, merge, rebuild, test, refresh `docs/index.html`, commit,
+push. A scheduled cloud routine then republishes the Claude artifact at 05:00
+and 17:00 **UTC**, which is 10am/10pm PDT and 9am/9pm PST - always after a
+~3 hour pull has finished.
+
+**The repo must not live in ~/Desktop, ~/Documents or ~/Downloads.** Those are
+TCC-protected and a launchd agent has no entitlement for them. From the
+Desktop, every run died with `Operation not permitted` and exit 126 *before the
+script's first line* - which meant nothing was ever written to `logs/`, because
+the script that writes the log is the script that could not start. It failed
+silently three days running. It lives in `~/riftbound` now.
+
+To check it is alive:
+
+```bash
+launchctl print gui/$(id -u)/com.riftbound.refresh | grep -E "runs|last exit"
+ls logs/refresh-*.log            # one per day it actually ran
+wc -c logs/launchd.err.log       # anything but 0 is a problem
+```
+
+The artifact cannot be published by `daily.sh` - the Artifact tool is not
+available to headless sessions. That is the cloud routine's whole job, and it
+needs `assets/cardimg.json` (the pre-encoded card art) committed, because a
+clone has no jpg cache and no Pillow.
+
 ## Read HANDOFF.md
 
 It carries the full history: endpoints, classification rules, the reasoning
