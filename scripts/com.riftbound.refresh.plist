@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <!--
-  Riftbound price refresh at 05:00 and 17:00 local time.
+  Riftbound price refresh: fires hourly, pulls twice a day.
 
   The repo must NOT live in ~/Desktop, ~/Documents or ~/Downloads. Those are
   TCC-protected, and a launchd agent has no permission for them - every run
@@ -35,23 +35,21 @@
   <key>WorkingDirectory</key>
   <string>/Users/timothypark/riftbound</string>
 
-  <!-- Twice a day, 05:00 and 17:00 LOCAL time. launchd follows the clock, so
-       these stay at 5am/5pm Pacific across the DST change without editing.
-       If a run is still going when the next one is due, launchd does not start
-       a second copy - it runs it when the first finishes. That matters here:
-       a full pull is ~1,470 products and TCGplayer throttles hard, so an
-       evening run can be a good deal slower than a morning one. -->
+  <!-- Fires EVERY HOUR, on the hour. That is not the same as pulling hourly:
+       daily.sh still does at most two pulls a day, one in the 05:00-16:59
+       window and one in the 17:00-04:59 window, and exits in a fraction of a
+       second on any hour where the current window is already done.
+
+       Hourly firing is what makes those two pulls survive a laptop that is
+       awake at random times. A fixed 05:00 job on a sleeping Mac is simply
+       missed; an hourly one catches the morning pull at 09:00, or 14:00, or
+       whenever the machine first happens to be awake. launchd will not start a
+       second copy while one is running, so a three-hour pull is never
+       re-entered by the next hour's tick. -->
   <key>StartCalendarInterval</key>
-  <array>
-    <dict>
-      <key>Hour</key><integer>5</integer>
-      <key>Minute</key><integer>0</integer>
-    </dict>
-    <dict>
-      <key>Hour</key><integer>17</integer>
-      <key>Minute</key><integer>0</integer>
-    </dict>
-  </array>
+  <dict>
+    <key>Minute</key><integer>0</integer>
+  </dict>
 
   <!-- The script does its own logging; these catch anything that escapes it,
        such as an interpreter failing before the script can redirect. -->
